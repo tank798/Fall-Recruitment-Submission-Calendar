@@ -1,0 +1,18 @@
+.next/
+node_modules/
+node_modules
+.pnpm-store/
+*.log
+.DS_Store
+.env*
+!.env.example
+tsconfig.tsbuildinfo
+data/*.tmp
+data/.write.lock
+data/backups/
+data/quarantine/
+# 本地真实数据永不进入公开仓库；首次克隆会由 demo-data.json 自动初始化。
+data/data.json
+秋招进度.xlsx
+秋招时间表_导出_*.xlsx
+秋招时间表-*.xlsx

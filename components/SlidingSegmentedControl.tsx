@@ -1,0 +1,57 @@
+import type { CSSProperties } from "react";
+import { cn } from "@/lib/utils";
+
+export function SlidingSegmentedControl<Value extends string>({
+  ariaLabel,
+  className,
+  compact = false,
+  getLabel = (option) => option,
+  onChange,
+  options,
+  value,
+}: {
+  ariaLabel: string;
+  className?: string;
+  compact?: boolean;
+  getLabel?: (value: Value) => string;
+  onChange: (value: Value) => void;
+  options: readonly Value[];
+  value: Value;
+}) {
+  const activeIndex = Math.max(0, options.indexOf(value));
+  const columns = { "--segment-count": options.length } as CSSProperties;
+
+  return (
+    <div
+      aria-label={ariaLabel}
+      className={cn(
+        "segmented-slider relative isolate grid overflow-hidden rounded-xl bg-[#f5f6f7] p-1",
+        className,
+      )}
+      role="tablist"
+      style={columns}
+    >
+      <span
+        aria-hidden="true"
+        className="segmented-slider-indicator pointer-events-none absolute bottom-1 left-1 top-1 rounded-[9px] bg-white shadow-[0_1px_5px_rgba(31,35,41,0.12)] ring-1 ring-black/[0.03]"
+        style={{ transform: `translateX(${activeIndex * 100}%)` }}
+      />
+      {options.map((option) => (
+        <button
+          aria-selected={value === option}
+          className={cn(
+            "relative z-10 min-w-0 rounded-[9px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30",
+            compact ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm",
+            value === option ? "text-[#1f2329]" : "text-[#646a73] hover:text-[#1f2329]",
+          )}
+          key={option}
+          onClick={() => onChange(option)}
+          role="tab"
+          type="button"
+        >
+          {getLabel(option)}
+        </button>
+      ))}
+    </div>
+  );
+}
