@@ -8,7 +8,7 @@ import {
 } from "@/lib/cohort";
 import { DEFAULT_RECRUITMENT_BATCH, normalizeRecruitmentBatch } from "@/lib/recruitmentBatch";
 import { inferInterviewRound, normalizeInterviewRound } from "@/lib/interviewRound";
-import { inferOfferType, normalizeOfferType } from "@/lib/offerType";
+import { getOfferTypePrefix, inferOfferType, normalizeOfferType } from "@/lib/offerType";
 import { inferWrittenRound, normalizeWrittenRound } from "@/lib/writtenRound";
 import type { Job, RecruitmentBatch, Schedule, ScheduleInput, Stage } from "@/lib/types";
 import { RECRUITMENT_BATCHES, STAGES } from "@/lib/types";
@@ -303,38 +303,47 @@ export function AddScheduleModal({
                       ? "笔试轮次"
                       : "Offer 类型"
                 }
-                className="w-full max-w-[142px] justify-self-center"
+                className="w-[176px] max-w-none justify-self-center"
                 style={{ gridColumnStart: STAGES.indexOf(form.stage) + 1 }}
               >
-                {form.stage === "Offer" ? (
+                <span className="flex w-full">
                   <input
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-center text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-                    maxLength={24}
-                    onChange={(event) => update("offerType", event.target.value)}
-                    placeholder="实习 / 正式 Offer"
-                    value={form.offerType || ""}
+                    className="h-9 min-w-0 flex-1 rounded-l-lg border border-r-0 border-slate-200 bg-white px-2 text-center text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                    maxLength={form.stage === "Offer" ? 18 : 12}
+                    onChange={(event) => {
+                      if (form.stage === "Offer") {
+                        update("offerType", normalizeOfferType(event.target.value));
+                        return;
+                      }
+                      update(
+                        form.stage === "面试" ? "interviewRound" : "writtenRound",
+                        event.target.value,
+                      );
+                    }}
+                    placeholder={
+                      form.stage === "面试"
+                        ? "AI / 一 / 终"
+                        : form.stage === "笔试"
+                          ? "一 / 二 / 三"
+                          : "实习 / 正式"
+                    }
+                    value={
+                      form.stage === "面试"
+                        ? form.interviewRound || ""
+                        : form.stage === "笔试"
+                          ? form.writtenRound || ""
+                          : getOfferTypePrefix(form.offerType)
+                    }
                   />
-                ) : (
-                  <span className="flex">
-                <input
-                      className="h-9 min-w-0 flex-1 rounded-l-lg border border-r-0 border-slate-200 bg-white px-2 text-right text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-                  maxLength={12}
-                  onChange={(event) =>
-                    update(
-                      form.stage === "面试" ? "interviewRound" : "writtenRound",
-                      event.target.value,
-                    )
-                  }
-                  placeholder={form.stage === "面试" ? "AI / 一 / 二 / 终" : "一 / 二 / 三"}
-                  value={
-                    form.stage === "面试" ? form.interviewRound || "" : form.writtenRound || ""
-                  }
-                />
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-r-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600">
-                  {form.stage === "面试" ? "面" : "笔"}
-                </span>
+                  <span
+                    className={cn(
+                      "grid h-9 shrink-0 place-items-center rounded-r-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600",
+                      form.stage === "Offer" ? "w-[52px]" : "w-9",
+                    )}
+                  >
+                    {form.stage === "面试" ? "面" : form.stage === "笔试" ? "笔" : "Offer"}
                   </span>
-                )}
+                </span>
               </label>
             </div>
           ) : null}
