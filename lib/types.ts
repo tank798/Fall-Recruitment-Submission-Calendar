@@ -1,4 +1,4 @@
-export const STAGES = ["投递", "测评", "笔试", "面试", "Offer"] as const;
+export const STAGES = ["投递", "测评", "笔试", "面试", "Offer", "未通过"] as const;
 
 export type Stage = (typeof STAGES)[number];
 

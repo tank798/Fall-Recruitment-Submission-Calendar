@@ -8,6 +8,7 @@ import { normalizedSearch } from "@/lib/utils";
 import { CohortSelector } from "./CohortSelector";
 import { SearchBar } from "./SearchBar";
 import { StageFilter, type StageFilterValue } from "./StageFilter";
+import { StatusSummaryCards } from "./StatusSummaryCards";
 import { TimelineDayGroup } from "./TimelineDayGroup";
 import { useRecruitmentCohort } from "./RecruitmentCohortContext";
 
@@ -67,6 +68,14 @@ export function TimelinePage({
       id="timeline-panel"
       role="tabpanel"
     >
+      <section className="border-b border-[#e5e6e8] px-8 py-4">
+        <StatusSummaryCards
+          onChange={onStageFilterChange}
+          schedules={schedules}
+          value={stageFilter}
+        />
+      </section>
+
       <header className="border-b border-[#e5e6e8] px-8 py-4">
         <div className="flex items-center justify-between gap-5">
           <StageFilter onChange={onStageFilterChange} value={stageFilter} />

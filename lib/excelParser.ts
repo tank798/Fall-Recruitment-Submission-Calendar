@@ -119,6 +119,7 @@ function parseExcelDate(value: Cell) {
 
 function inferStage(detail: string): Stage {
   const text = detail.toLocaleLowerCase();
+  if (/(未通过|不通过|淘汰|拒绝|感谢信)/i.test(text)) return "未通过";
   if (/offer/i.test(text)) return "Offer";
   if (/(笔试|机试|机考|上机|编程题|在线考试|专业笔试)/i.test(text)) return "笔试";
   if (/(测评|测试|assessment)/i.test(text)) return "测评";

@@ -34,6 +34,7 @@ const STAGE_PRIORITY: Record<Stage, number> = {
   笔试: 3,
   测评: 4,
   投递: 5,
+  未通过: 6,
 };
 
 export function sortSchedulesByStagePriority(schedules: Schedule[]) {

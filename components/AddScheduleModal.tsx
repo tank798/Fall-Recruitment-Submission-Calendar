@@ -294,7 +294,7 @@ export function AddScheduleModal({
           </div>
 
           {form.stage === "面试" || form.stage === "笔试" || form.stage === "Offer" ? (
-            <div className="grid grid-cols-5 sm:col-span-2">
+            <div className="grid grid-cols-6 sm:col-span-2">
               <label
                 aria-label={
                   form.stage === "面试"

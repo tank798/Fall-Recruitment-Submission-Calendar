@@ -22,6 +22,10 @@ export const STAGE_STYLES: Record<Stage, { badge: string; dot: string }> = {
     badge: "border-rose-100 bg-rose-50 text-rose-700",
     dot: "bg-rose-500",
   },
+  未通过: {
+    badge: "border-red-100 bg-red-50 text-red-700",
+    dot: "bg-red-500",
+  },
 };
 
 export function StageBadge({ stage, label }: { stage: Stage; label?: string }) {
