@@ -46,7 +46,7 @@ export function StatusSummaryCards({
                 : "border-[#e5e6e8] hover:border-[#c9cdd4] hover:bg-[#fafbfc]",
             )}
             key={stage}
-            onClick={() => onChange(stage)}
+            onClick={() => onChange(selected ? "全部" : stage)}
             type="button"
           >
             <span className="flex items-center gap-2 text-xs font-medium text-[#8f959e]">

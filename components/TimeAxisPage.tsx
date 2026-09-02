@@ -62,14 +62,17 @@ export function TimeAxisPage({
       id="time-axis-panel"
       role="tabpanel"
     >
-      <header className="sticky top-0 z-30 flex shrink-0 items-center justify-end gap-3 border-b border-[#e5e6e8] bg-white px-8 py-4">
+      <header className="sticky top-0 z-30 grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-[#e5e6e8] bg-white px-8 py-4">
+        <span aria-hidden="true" />
         <TimeAxisStageFilter onChange={setStageFilter} value={stageFilter} />
-        <SearchBar
-          ariaLabel="搜索时间轴中的公司或岗位"
-          onChange={setSearch}
-          placeholder="搜索公司 / 岗位"
-          value={search}
-        />
+        <div className="flex justify-end">
+          <SearchBar
+            ariaLabel="搜索时间轴中的公司或岗位"
+            onChange={setSearch}
+            placeholder="搜索公司 / 岗位"
+            value={search}
+          />
+        </div>
       </header>
 
       <HorizontalDateBoard

@@ -7,7 +7,7 @@ import type { Job, Schedule } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
 import { CohortSelector } from "./CohortSelector";
 import { SearchBar } from "./SearchBar";
-import { StageFilter, type StageFilterValue } from "./StageFilter";
+import type { StageFilterValue } from "./StageFilter";
 import { StatusSummaryCards } from "./StatusSummaryCards";
 import { TimelineDayGroup } from "./TimelineDayGroup";
 import { useRecruitmentCohort } from "./RecruitmentCohortContext";
@@ -77,27 +77,24 @@ export function TimelinePage({
       </section>
 
       <header className="border-b border-[#e5e6e8] px-8 py-4">
-        <div className="flex items-center justify-between gap-5">
-          <StageFilter onChange={onStageFilterChange} value={stageFilter} />
-          <div className="flex items-center gap-2">
-            <SearchBar onChange={onSearchChange} value={search} />
-            <CohortSelector />
-            <a
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#dee0e3] bg-white px-3.5 text-sm font-medium text-[#4e5969] transition hover:border-[#c9cdd4] hover:bg-[#f7f8fa] hover:text-[#1f2329] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/20"
-              href={exportHref}
-            >
-              <Download className="h-4 w-4" />
-              导出 Excel
-            </a>
-            <button
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#3370ff] px-3.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#2865e8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30 focus-visible:ring-offset-2"
-              onClick={onAdd}
-              type="button"
-            >
-              <Plus className="h-4 w-4" />
-              添加
-            </button>
-          </div>
+        <div className="flex items-center justify-end gap-2">
+          <SearchBar onChange={onSearchChange} value={search} />
+          <CohortSelector />
+          <a
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#dee0e3] bg-white px-3.5 text-sm font-medium text-[#4e5969] transition hover:border-[#c9cdd4] hover:bg-[#f7f8fa] hover:text-[#1f2329] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/20"
+            href={exportHref}
+          >
+            <Download className="h-4 w-4" />
+            导出 Excel
+          </a>
+          <button
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#3370ff] px-3.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#2865e8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30 focus-visible:ring-offset-2"
+            onClick={onAdd}
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+            添加
+          </button>
         </div>
       </header>
 
