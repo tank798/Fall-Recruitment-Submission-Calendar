@@ -82,14 +82,18 @@ export function HorizontalDateBoard({
       startX: event.clientX,
       scrollLeft: board.scrollLeft,
     };
-    board.setPointerCapture(event.pointerId);
   };
 
   const moveDrag = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag.active || drag.pointerId !== event.pointerId) return;
     const distance = event.clientX - drag.startX;
-    if (Math.abs(distance) > 4) drag.moved = true;
+    if (Math.abs(distance) > 4 && !drag.moved) {
+      drag.moved = true;
+      // 只有真正开始拖拽后才捕获指针。如果在 pointerdown 时立即捕获，
+      // 浏览器会把事件卡片的 click 重定向到看板，导致详情抽屉无法打开。
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     if (!drag.moved) return;
     event.preventDefault();
     event.currentTarget.scrollLeft = drag.scrollLeft - distance;
