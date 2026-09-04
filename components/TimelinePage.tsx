@@ -1,38 +1,29 @@
-import { CalendarDays, Download, Plus } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useMemo } from "react";
 import { getCompanyMatchKey } from "@/lib/companyNames";
 import { sortSchedules } from "@/lib/date";
 import { getScheduleStageLabel } from "@/lib/interviewRound";
 import type { Job, Schedule } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
-import { CohortSelector } from "./CohortSelector";
-import { SearchBar } from "./SearchBar";
-import type { StageFilterValue } from "./StageFilter";
+import type { StageFilterValue } from "@/lib/types";
 import { StatusSummaryCards } from "./StatusSummaryCards";
 import { TimelineDayGroup } from "./TimelineDayGroup";
-import { useRecruitmentCohort } from "./RecruitmentCohortContext";
 
 export function TimelinePage({
   schedules,
   jobs,
   search,
   stageFilter,
-  onSearchChange,
   onStageFilterChange,
-  onAdd,
   onSelect,
 }: {
   schedules: Schedule[];
   jobs: Job[];
   search: string;
   stageFilter: StageFilterValue;
-  onSearchChange: (value: string) => void;
   onStageFilterChange: (value: StageFilterValue) => void;
-  onAdd: () => void;
   onSelect: (schedule: Schedule) => void;
 }) {
-  const { selectedGraduationYear } = useRecruitmentCohort();
-  const exportHref = `/api/export?graduationYear=${selectedGraduationYear}&stage=${encodeURIComponent(stageFilter)}&search=${encodeURIComponent(search)}`;
   const batchByJobKey = useMemo(
     () =>
       new Map(
@@ -49,7 +40,7 @@ export function TimelinePage({
       if (stageFilter !== "全部" && schedule.stage !== stageFilter) return false;
       if (!query) return true;
       return normalizedSearch(
-        `${schedule.company} ${schedule.position} ${schedule.stage} ${getScheduleStageLabel(schedule)} ${schedule.detail}`,
+        `${schedule.company} ${schedule.position} ${schedule.stage} ${getScheduleStageLabel(schedule)}`,
       ).includes(query);
     });
 
@@ -68,35 +59,13 @@ export function TimelinePage({
       id="timeline-panel"
       role="tabpanel"
     >
-      <section className="border-b border-[#e5e6e8] px-8 py-4">
+      <section className="border-b border-[#e5e6e8] px-4 py-3 sm:px-8">
         <StatusSummaryCards
           onChange={onStageFilterChange}
           schedules={schedules}
           value={stageFilter}
         />
       </section>
-
-      <header className="border-b border-[#e5e6e8] px-8 py-4">
-        <div className="flex items-center justify-end gap-2">
-          <SearchBar onChange={onSearchChange} value={search} />
-          <CohortSelector />
-          <a
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#dee0e3] bg-white px-3.5 text-sm font-medium text-[#4e5969] transition hover:border-[#c9cdd4] hover:bg-[#f7f8fa] hover:text-[#1f2329] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/20"
-            href={exportHref}
-          >
-            <Download className="h-4 w-4" />
-            导出 Excel
-          </a>
-          <button
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#3370ff] px-3.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#2865e8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30 focus-visible:ring-offset-2"
-            onClick={onAdd}
-            type="button"
-          >
-            <Plus className="h-4 w-4" />
-            添加
-          </button>
-        </div>
-      </header>
 
       <div className="timeline-table-scroll min-h-0 flex-1 overflow-auto bg-white">
         {groups.length > 0 ? (
@@ -108,9 +77,15 @@ export function TimelinePage({
               <span className="sticky left-0 z-10 flex items-center justify-center border-r border-[#f0f1f2] bg-white px-4 text-center">
                 日期
               </span>
-              <span className="flex items-center justify-center px-4 text-center">公司</span>
+              {/* 与内容行共用同一套「头像 + 名称」定宽居中结构，保证表头与公司名称起始线对齐 */}
+              <span className="flex items-center justify-center px-4">
+                <span className="grid w-[176px] min-w-0 grid-cols-[28px_minmax(0,1fr)] items-center gap-2.5">
+                  <span aria-hidden="true" className="w-7" />
+                  <span className="min-w-0 text-left">公司</span>
+                </span>
+              </span>
               <span className="flex items-center justify-center px-4 text-center">岗位</span>
-              <span className="flex items-center justify-center px-3 text-center">阶段</span>
+              <span className="flex items-center justify-center px-4 text-center">批次</span>
               <span className="flex items-center justify-center px-4 text-center">环节</span>
               <span aria-hidden="true" />
             </div>

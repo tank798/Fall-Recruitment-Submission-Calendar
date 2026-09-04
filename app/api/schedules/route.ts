@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { createSchedule, findJobForSchedule, getDataStore } from "@/lib/dataStore";
+import {
+  createSchedule,
+  findJobForSchedule,
+  getDataStore,
+  isVercelUiPreview,
+} from "@/lib/dataStore";
 import { scheduleInputSchema } from "@/lib/scheduleSchema";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +15,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (isVercelUiPreview()) {
+    return NextResponse.json(
+      { error: "Vercel 版本仅用于 UI 预览，不会保存修改" },
+      { status: 403 },
+    );
+  }
   const parsed = scheduleInputSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json(

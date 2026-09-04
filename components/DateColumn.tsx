@@ -11,6 +11,7 @@ function getDateMeta(date: string) {
     label: `${month}月${day}日`,
     weekday: WEEKDAYS[weekday],
     isWeekend: weekday === 0 || weekday === 6,
+    isMonthStart: day === 1,
   };
 }
 
@@ -25,7 +26,7 @@ export function DateColumn({
   today: string;
   onSelect: (schedule: Schedule) => void;
 }) {
-  const { label, weekday, isWeekend } = getDateMeta(date);
+  const { label, weekday, isWeekend, isMonthStart } = getDateMeta(date);
   const isToday = date === today;
   const isExpanded = schedules.length > 6;
 
@@ -33,7 +34,8 @@ export function DateColumn({
     <section
       aria-label={`${label} ${weekday}，${schedules.length} 条日程`}
       className={cn(
-        "time-axis-column flex flex-col border-r border-[#eff0f1] bg-white",
+        "time-axis-column snap-start flex flex-col border-r border-[#eff0f1] bg-white",
+        isMonthStart && "border-l border-l-[#c9cdd4]",
         isWeekend && "bg-[#fcfcfb]",
         isToday && "bg-[#f8faff]",
       )}
@@ -41,11 +43,16 @@ export function DateColumn({
     >
       <header
         className={cn(
-          "flex h-[66px] shrink-0 flex-col items-center justify-center border-b border-[#eff0f1]",
+          "sticky top-0 z-10 flex h-[66px] shrink-0 flex-col items-center justify-center border-b border-[#eff0f1] bg-white",
           isWeekend && "bg-[#fafaf9]",
           isToday && "bg-[#f3f7ff]",
         )}
       >
+        {isMonthStart ? (
+          <span className="mb-1 rounded bg-[#e8ebf0] px-1.5 py-0.5 text-[10px] font-semibold text-[#4e5969]">
+            {date.slice(0, 4)} 年 {Number(date.slice(5, 7))} 月
+          </span>
+        ) : null}
         <div className="flex items-center gap-1.5">
           <span
             className={cn(

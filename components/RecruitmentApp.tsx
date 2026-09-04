@@ -3,7 +3,7 @@
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { isDateInRange } from "@/lib/cohort";
-import { getCompanyMatchKey } from "@/lib/companyNames";
+import { getCompanyDisplayName, getCompanyMatchKey } from "@/lib/companyNames";
 import type { RecruitmentStore, Schedule, ScheduleInput } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
 import { AddScheduleModal } from "./AddScheduleModal";
@@ -14,7 +14,7 @@ import {
   useRecruitmentCohort,
 } from "./RecruitmentCohortContext";
 import { ScheduleDetailDrawer } from "./ScheduleDetailDrawer";
-import type { StageFilterValue } from "./StageFilter";
+import type { StageFilterValue } from "@/lib/types";
 import { TimeAxisPage } from "./TimeAxisPage";
 import { TimelinePage } from "./TimelinePage";
 import { TopNavigation, type AppView } from "./TopNavigation";
@@ -45,6 +45,7 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
   const [stageFilter, setStageFilter] = useState<StageFilterValue>("全部");
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit" | "copy">("add");
@@ -52,6 +53,7 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
 
   const selectedSchedule = schedules.find((schedule) => schedule.id === selectedScheduleId);
   const selectedJob = jobs.find((job) => job.id === selectedJobId);
+  const exportHref = `/api/export?graduationYear=${selectedGraduationYear}&stage=${encodeURIComponent(stageFilter)}&search=${encodeURIComponent(search)}`;
   const cohortSchedules = useMemo(
     () => schedules.filter((schedule) => isDateInRange(schedule.date, dateRange)),
     [dateRange, schedules],
@@ -86,12 +88,14 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
   useEffect(() => {
     setSelectedScheduleId(null);
     setSelectedJobId(null);
+    setSelectedCompany(null);
   }, [selectedGraduationYear]);
 
   const changeView = (nextView: AppView) => {
     setView(nextView);
     setSelectedScheduleId(null);
     setSelectedJobId(null);
+    setSelectedCompany(null);
   };
 
   const openAddModal = () => {
@@ -111,7 +115,7 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
     setJobs(latest.jobs);
   };
 
-  const saveSchedule = async (input: ScheduleInput, id?: string) => {
+  const saveSchedule = async (input: ScheduleInput, id?: string, mode?: "add" | "edit" | "copy") => {
     const expectedUpdatedAt = id
       ? schedules.find((schedule) => schedule.id === id)?.updatedAt
       : undefined;
@@ -144,8 +148,12 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
         return exists ? current.map((item) => (item.id === job.id ? job : item)) : [...current, job];
       });
     }
-    setSelectedScheduleId(schedule.id);
-    setNotice(id ? "日程已更新" : "日程已添加");
+    // 只有「修改」时才自动打开抽屉：新增日程直接让 toast 提示即可，
+    // 避免用户连续添加多条时被来回跳转打断；复制同理，让用户继续在弹窗里操作。
+    if (mode === "edit") {
+      setSelectedScheduleId(schedule.id);
+    }
+    setNotice(id ? "修改成功" : "添加成功");
   };
 
   const removeSelectedSchedule = async () => {
@@ -169,13 +177,18 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
 
   return (
     <div className="flex h-dvh min-h-[620px] flex-col overflow-hidden bg-[#f7f8fa] text-[#1f2329]">
-      <TopNavigation onChange={changeView} view={view} />
+      <TopNavigation
+        exportHref={exportHref}
+        onAdd={openAddModal}
+        onChange={changeView}
+        onSearchChange={setSearch}
+        search={search}
+        view={view}
+      />
       <div className="flex min-h-0 min-w-0 flex-1">
         {view === "timeline" ? (
           <TimelinePage
             jobs={jobs}
-            onAdd={openAddModal}
-            onSearchChange={setSearch}
             onSelect={(schedule) => setSelectedScheduleId(schedule.id)}
             onStageFilterChange={setStageFilter}
             schedules={cohortSchedules}
@@ -186,13 +199,24 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
         {view === "time-axis" ? (
           <TimeAxisPage
             onSelect={(schedule) => setSelectedScheduleId(schedule.id)}
+            onStageFilterChange={setStageFilter}
             schedules={cohortSchedules}
+            search={search}
+            stageFilter={stageFilter}
           />
         ) : null}
         {view === "companies" ? (
           <CompaniesPage
             jobs={cohortJobs}
-            onSelect={(job) => setSelectedJobId(job.id)}
+            onSelectCompany={(company) => {
+              setSelectedCompany(company);
+              setSelectedJobId(null);
+            }}
+            onStageFilterChange={setStageFilter}
+            schedules={cohortSchedules}
+            search={search}
+            selectedCompany={selectedCompany}
+            stageFilter={stageFilter}
           />
         ) : null}
         {(view === "timeline" || view === "time-axis") && selectedSchedule ? (
@@ -210,12 +234,26 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
               setModalMode("edit");
               setModalOpen(true);
             }}
-            readOnly={view === "time-axis"}
             schedule={selectedSchedule}
           />
         ) : null}
-        {view === "companies" && selectedJob ? (
-          <CompanyDetailDrawer job={selectedJob} onClose={() => setSelectedJobId(null)} />
+        {view === "companies" && selectedCompany ? (
+          <CompanyDetailDrawer
+            company={selectedCompany}
+            job={selectedJob}
+            jobs={cohortJobs.filter(
+              (job) => getCompanyDisplayName(job.company) === selectedCompany,
+            )}
+            onBack={() => setSelectedJobId(null)}
+            onClose={() => {
+              setSelectedCompany(null);
+              setSelectedJobId(null);
+            }}
+            onSelectJob={(job) => {
+              setSelectedJobId(job.id);
+              setSelectedCompany(getCompanyDisplayName(job.company));
+            }}
+          />
         ) : null}
       </div>
 

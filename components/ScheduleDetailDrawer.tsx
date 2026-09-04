@@ -44,7 +44,6 @@ export function ScheduleDetailDrawer({
   onCopy,
   onEdit,
   onDelete,
-  readOnly = false,
 }: {
   schedule: Schedule;
   job?: Job;
@@ -52,7 +51,6 @@ export function ScheduleDetailDrawer({
   onCopy: () => void;
   onEdit: () => void;
   onDelete: () => Promise<void>;
-  readOnly?: boolean;
 }) {
   const [deleting, setDeleting] = useState(false);
   const sourceLink = schedule.sourceLink || job?.sourceLink;
@@ -136,38 +134,36 @@ export function ScheduleDetailDrawer({
           </div>
         </div>
 
-        {!readOnly ? (
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5">
+        <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5">
+          <button
+            className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+            disabled={deleting}
+            onClick={remove}
+            type="button"
+          >
+            <Trash2 className="h-4 w-4" />
+            {deleting ? "删除中" : "删除"}
+          </button>
+          <div className="flex items-center gap-2">
             <button
-              className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
-              disabled={deleting}
-              onClick={remove}
+              aria-label="复制日程"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600"
+              onClick={onCopy}
+              title="复制日程"
               type="button"
             >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? "删除中" : "删除"}
+              <Copy className="h-4 w-4" />
             </button>
-            <div className="flex items-center gap-2">
-              <button
-                aria-label="复制日程"
-                className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600"
-                onClick={onCopy}
-                title="复制日程"
-                type="button"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              <button
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#3370ff] px-4 text-sm font-medium text-white hover:bg-[#2865e8]"
-                onClick={onEdit}
-                type="button"
-              >
-                <Pencil className="h-4 w-4" />
-                修改
-              </button>
-            </div>
+            <button
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#3370ff] px-4 text-sm font-medium text-white hover:bg-[#2865e8]"
+              onClick={onEdit}
+              type="button"
+            >
+              <Pencil className="h-4 w-4" />
+              修改
+            </button>
           </div>
-        ) : null}
+        </div>
       </aside>
     </>
   );

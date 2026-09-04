@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { copyFile, mkdir, open, readdir, readFile, rename, stat, unlink } from "node:fs/promises";
 import path from "node:path";
-import { parseSourceWorkbook } from "./excelParser";
 import { classifyCompany } from "./companyClassifier";
 import { getCompanyMatchKey } from "./companyNames";
 import { normalizeRecruitmentBatch } from "./recruitmentBatch";
-import { normalizeInterviewRound } from "./interviewRound";
+import { normalizeFailNote, normalizeInterviewRound } from "./interviewRound";
 import { normalizeOfferType } from "./offerType";
 import { normalizeWrittenRound } from "./writtenRound";
 import { jobRecordSchema, scheduleRecordSchema, storeEnvelopeSchema } from "./storeSchema";
@@ -18,8 +17,10 @@ const DEMO_DATA_FILE = path.join(DATA_DIRECTORY, "demo-data.json");
 const WRITE_LOCK_FILE = path.join(DATA_DIRECTORY, ".write.lock");
 const BACKUP_DIRECTORY = path.join(DATA_DIRECTORY, "backups");
 const QUARANTINE_DIRECTORY = path.join(DATA_DIRECTORY, "quarantine");
-const SOURCE_FILE =
-  process.env.RECRUITMENT_EXCEL_PATH || path.join(process.cwd(), "秋招进度.xlsx");
+// 注意：这里不再保留「从 秋招进度.xlsx 自动重建」的兜底。那份快照停留在
+// 2026-09-01，远旧于 data.json；一旦 data.json 损坏就自动重建，会把用户在网页上
+// 新增和修改的全部数据静默覆盖掉。现在改为：备份救不回来就直接报错停启动，
+// 由用户手动从 data/manual-backups/ 挑一份快照恢复。
 
 /** 保留的历史快照数量。每次写入前对旧文件做一次快照，超出后从最旧的开始删。 */
 const MAX_BACKUPS = 30;
@@ -58,6 +59,13 @@ async function acquireWriteLock() {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < WRITE_LOCK_TIMEOUT_MS) {
+    // 自愈：上一次的 release() 因为文件系统原因没成功 unlink，但持有者就是本进程。
+    // 这种情况下必须主动删掉锁文件，否则 EEXIST 会让本进程无限等自己——同一进程死锁。
+    // 只对 PID 匹配的锁生效，跨进程互斥依然靠 EEXIST 兜底。
+    if ((await readLockOwner()) === process.pid) {
+      await unlink(WRITE_LOCK_FILE).catch(() => undefined);
+    }
+
     try {
       const handle = await open(WRITE_LOCK_FILE, "wx");
       await handle.writeFile(`${process.pid} ${new Date().toISOString()}\n`, "utf8");
@@ -100,6 +108,28 @@ async function exists(file: string) {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * 读取当前锁文件里的持有者 PID（写入格式为 `${pid} ${iso}\n`）。
+ * 读不到内容、PID 不是数字、或锁文件不存在时返回 null。
+ *
+ * 这是「同进程死锁自愈」的关键：release() 偶尔因文件系统原因 unlink 失败，
+ * 会留下一个持有者已是本进程的锁文件；如果不主动清理，下一次 acquireWriteLock
+ * 会一直等 STALE_WRITE_LOCK_MS 之后才认为它过期，整个写链路跟着 15s 超时。
+ * 先看一眼 PID 是不是自己，是就直接 unlink 重新拿锁——这条路径只在持有者
+ * 是自己时生效，跨进程互斥依旧由 EEXIST 兜底。
+ */
+async function readLockOwner(): Promise<number | null> {
+  try {
+    const content = await readFile(WRITE_LOCK_FILE, "utf8");
+    const match = content.match(/^(\d+)\s/);
+    if (!match) return null;
+    const pid = Number.parseInt(match[1], 10);
+    return Number.isFinite(pid) ? pid : null;
+  } catch {
+    return null;
   }
 }
 
@@ -233,6 +263,30 @@ async function quarantineFile(file: string, reason: string) {
 interface ParseOutcome {
   store: RecruitmentStore;
   rejected: unknown[];
+  migrated: boolean;
+}
+
+/**
+ * 兼容旧版独立的「测评」环节。迁移必须发生在 Zod 校验之前，
+ * 否则旧记录会被当成脏数据隔离，而不是并入「笔试 / 测评」。
+ */
+function migrateLegacySchedule(raw: unknown) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { value: raw, migrated: false };
+  }
+  const record = raw as Record<string, unknown>;
+  if (record.stage !== "测评") return { value: raw, migrated: false };
+  return {
+    value: {
+      ...record,
+      stage: "笔试",
+      writtenRound:
+        typeof record.writtenRound === "string" && record.writtenRound.trim()
+          ? record.writtenRound
+          : "测评",
+    },
+    migrated: true,
+  };
 }
 
 /**
@@ -244,10 +298,13 @@ function parseStoreValue(value: unknown): ParseOutcome | null {
   if (!envelope.success) return null;
 
   const rejected: unknown[] = [];
+  let migrated = false;
 
   const schedules: Schedule[] = [];
   for (const raw of envelope.data.schedules) {
-    const parsed = scheduleRecordSchema.safeParse(raw);
+    const legacy = migrateLegacySchedule(raw);
+    migrated ||= legacy.migrated;
+    const parsed = scheduleRecordSchema.safeParse(legacy.value);
     if (parsed.success) schedules.push(parsed.data);
     else rejected.push(raw);
   }
@@ -268,6 +325,7 @@ function parseStoreValue(value: unknown): ParseOutcome | null {
       jobs,
     },
     rejected,
+    migrated,
   };
 }
 
@@ -344,25 +402,16 @@ async function loadStoreUnlocked(): Promise<RecruitmentStore> {
       return store;
     }
 
-    console.warn("[dataStore] 没有可用备份，将尝试重新导入数据源");
-  }
-
-  if (await exists(SOURCE_FILE)) {
-    try {
-      const imported = parseStoreValue(parseSourceWorkbook(SOURCE_FILE));
-      const store = imported ? imported.store : createEmptyStore(SOURCE_FILE);
-      await persistStoreUnlocked(store);
-      return store;
-    } catch (error) {
-      // xlsx 依赖 node:fs，在打包后的服务端运行时里可能拿不到（表现为
-      // "Cannot access file"）。此时不能让整个应用 500，降级为空数据并提示
-      // 用户改用独立脚本导入。
-      console.warn(
-        `[dataStore] 读取数据源失败（${SOURCE_FILE}）：${
-          error instanceof Error ? error.message : String(error)
-        }\n[dataStore] 请改用 \`pnpm import:excel\` 导入，应用先以空数据启动。`,
-      );
-    }
+    // 备份也救不回来时，绝不降级到 demo 或空库继续跑：那会让界面看起来
+    // 「正常打开」，实际上用户看到的是一份全新数据，极易被误认为数据已丢失，
+    // 再往里写入就会彻底覆盖真实数据。直接报错停启动，让人为介入做决定。
+    console.error(
+      "[dataStore] data.json 与全部备份都无法解析，已停止启动。\n" +
+        "[dataStore] 请手动从 data/manual-backups/ 复制一份快照为 data/data.json 后重启。",
+    );
+    throw new Error(
+      "本地数据文件已损坏且无可用备份。请从 data/manual-backups/ 复制一份快照为 data/data.json 后重启。",
+    );
   }
 
   // 公开仓库只跟踪不含隐私的 demo-data.json。每个克隆首次启动时把它
@@ -381,13 +430,24 @@ async function loadStoreUnlocked(): Promise<RecruitmentStore> {
   return store;
 }
 
+/** Vercel 只用于查看 UI：直接读取公开演示数据，不触碰本地真实数据和写锁。 */
+async function loadVercelPreviewStore() {
+  const demo = await readStoreFile(DEMO_DATA_FILE);
+  if (!demo) throw new Error("Vercel UI 预览数据不可用");
+  return demo.store;
+}
+
+export function isVercelUiPreview() {
+  return process.env.VERCEL === "1";
+}
+
 /** 收尾：隔离脏记录 + 执行字段迁移，必要时回写。 */
 async function finalizeStoreUnlocked(
   outcome: ParseOutcome,
   options: { persistIfChanged: boolean },
 ): Promise<RecruitmentStore> {
   const store = outcome.store;
-  let changed = false;
+  let changed = outcome.migrated;
 
   if (outcome.rejected.length > 0) {
     try {
@@ -404,13 +464,6 @@ async function finalizeStoreUnlocked(
     }
     changed = true;
   }
-
-  // 非面试环节不保留地点字段（沿用原有迁移逻辑）
-  store.schedules = store.schedules.map((schedule) => {
-    if (schedule.stage === "面试" || !schedule.location) return schedule;
-    changed = true;
-    return { ...schedule, location: "" };
-  });
 
   // 只自动清理完全没有内容的孤立岗位；带 JD、链接或待补进展的岗位仍保留。
   const activeJobKeys = new Set(
@@ -442,7 +495,7 @@ function normalizeInput(input: ScheduleInput) {
         input.stage === "面试" ? normalizeInterviewRound(input.interviewRound) : "",
       writtenRound: input.stage === "笔试" ? normalizeWrittenRound(input.writtenRound) : "",
       offerType: input.stage === "Offer" ? normalizeOfferType(input.offerType) : "",
-      location: input.stage === "面试" ? input.location : "",
+      failNote: input.stage === "未通过" ? normalizeFailNote(input.failNote) : "",
       sourceLink: input.sourceLink?.trim() || undefined,
     },
     job: { batch, jd },
@@ -518,6 +571,7 @@ export async function ensureDataStore() {
 }
 
 export async function getDataStore(): Promise<RecruitmentStore> {
+  if (isVercelUiPreview()) return loadVercelPreviewStore();
   return withStoreMutation(() => loadStoreUnlocked());
 }
 

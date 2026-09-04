@@ -11,6 +11,7 @@
  *   5. 没有 Excel 数据源时能否正常起一份空数据
  *   6. 备份是否真的可用
  *   7. 岗位索引、链接清空和多标签页冲突是否正确处理
+ *   8. 旧版「测评」记录是否能无损迁移为「笔试 / 测评」
  */
 
 import { execFile } from "node:child_process";
@@ -33,11 +34,7 @@ function sampleInput(company: string) {
     company,
     position: "数据分析",
     date: "2026-09-10",
-    time: "10:00",
     stage: "投递" as const,
-    detail: "",
-    location: "",
-    notes: "",
     sourceLink: undefined,
     batch: "秋招" as const,
     jd: "负责业务数据分析与决策支持。",
@@ -112,7 +109,6 @@ async function main() {
       ...sampleInput("已改名"),
       stage: "面试",
       interviewRound: "二面",
-      location: "线上",
       batch: "提前批",
       jd: "更新后的岗位 JD。",
     }),
@@ -127,10 +123,9 @@ async function main() {
   );
   check("删除生效", !afterMixed.schedules.some((s) => s.id === victim));
   check("更新生效", afterMixed.schedules.find((s) => s.id === target)?.company === "已改名");
-  check("面试环节保留地点", afterMixed.schedules.find((s) => s.id === target)?.location === "线上");
   check(
     "面试轮次规范保存",
-    afterMixed.schedules.find((s) => s.id === target)?.interviewRound === "二",
+    afterMixed.schedules.find((s) => s.id === target)?.interviewRound === "二面",
   );
   check(
     "修改日程同步更新招聘批次与 JD",
@@ -239,7 +234,42 @@ async function main() {
     `保留 ${afterPollute.schedules.length} 条`,
   );
 
-  /* --- 场景 6：无数据源空启动（独立进程）------------------------- */
+  /* --- 场景 6：旧版测评记录无损迁移 ------------------------------- */
+  const beforeLegacyMigration = await dataStore.getDataStore();
+  await writeFile(
+    DATA_FILE,
+    JSON.stringify(
+      {
+        ...beforeLegacyMigration,
+        schedules: [
+          ...beforeLegacyMigration.schedules,
+          {
+            id: "legacy-assessment",
+            company: "旧版测试公司",
+            position: "产品经理",
+            date: "2026-09-12",
+            stage: "测评",
+            source: "web",
+            createdAt: "2026-09-01T00:00:00.000Z",
+            updatedAt: "2026-09-01T00:00:00.000Z",
+          },
+        ],
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  const afterLegacyMigration = await dataStore.getDataStore();
+  const migratedAssessment = afterLegacyMigration.schedules.find(
+    (schedule) => schedule.id === "legacy-assessment",
+  );
+  check(
+    "旧版测评记录迁移为笔试",
+    migratedAssessment?.stage === "笔试" && migratedAssessment.writtenRound === "测评",
+  );
+
+  /* --- 场景 7：无数据源空启动（独立进程）------------------------- */
   try {
     const { stdout } = await execFileAsync(
       process.execPath,
@@ -251,7 +281,7 @@ async function main() {
     check("无数据源时空数据启动", false, String(error).slice(0, 200));
   }
 
-  /* --- 场景 7：备份可用 ------------------------------------------- */
+  /* --- 场景 8：备份可用 ------------------------------------------- */
   const backups = await dataStore.listBackups();
   check("已生成历史备份", backups.length > 0, `${backups.length} 份`);
 

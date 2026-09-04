@@ -3,6 +3,7 @@ import {
   deleteSchedule,
   findJobForSchedule,
   getDataStore,
+  isVercelUiPreview,
   ScheduleConflictError,
   updateSchedule,
 } from "@/lib/dataStore";
@@ -13,6 +14,12 @@ interface RouteContext {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  if (isVercelUiPreview()) {
+    return NextResponse.json(
+      { error: "Vercel 版本仅用于 UI 预览，不会保存修改" },
+      { status: 403 },
+    );
+  }
   const body = (await request.json()) as Record<string, unknown>;
   const parsed = scheduleInputSchema.safeParse(body);
   if (!parsed.success) {
@@ -44,6 +51,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
+  if (isVercelUiPreview()) {
+    return NextResponse.json(
+      { error: "Vercel 版本仅用于 UI 预览，不会保存修改" },
+      { status: 403 },
+    );
+  }
   const { id } = await context.params;
   const expectedUpdatedAt = new URL(request.url).searchParams.get("expectedUpdatedAt") || undefined;
   let deleted: boolean;

@@ -7,9 +7,9 @@ import {
   isDateInRange,
 } from "@/lib/cohort";
 import { DEFAULT_RECRUITMENT_BATCH, normalizeRecruitmentBatch } from "@/lib/recruitmentBatch";
-import { inferInterviewRound, normalizeInterviewRound } from "@/lib/interviewRound";
-import { getOfferTypePrefix, inferOfferType, normalizeOfferType } from "@/lib/offerType";
-import { inferWrittenRound, normalizeWrittenRound } from "@/lib/writtenRound";
+import { normalizeFailNote, normalizeInterviewRound } from "@/lib/interviewRound";
+import { getOfferTypePrefix, normalizeOfferType } from "@/lib/offerType";
+import { normalizeWrittenRound } from "@/lib/writtenRound";
 import type { Job, RecruitmentBatch, Schedule, ScheduleInput, Stage } from "@/lib/types";
 import { RECRUITMENT_BATCHES, STAGES } from "@/lib/types";
 import { cn, normalizedSearch } from "@/lib/utils";
@@ -20,14 +20,11 @@ const EMPTY_FORM: ScheduleInput = {
   company: "",
   position: "",
   date: "",
-  time: "",
   stage: "投递",
   interviewRound: "",
   writtenRound: "",
   offerType: "",
-  detail: "",
-  location: "",
-  notes: "",
+  failNote: "",
   sourceLink: "",
   batch: DEFAULT_RECRUITMENT_BATCH,
   jd: "",
@@ -53,7 +50,7 @@ export function AddScheduleModal({
   mode?: "add" | "edit" | "copy";
   jobs: Job[];
   onClose: () => void;
-  onSave: (input: ScheduleInput, id?: string) => Promise<void>;
+  onSave: (input: ScheduleInput, id?: string, mode?: "add" | "edit" | "copy") => Promise<void>;
 }) {
   const { dateRange, selectedGraduationYear } = useRecruitmentCohort();
   const [form, setForm] = useState<ScheduleInput>(EMPTY_FORM);
@@ -78,16 +75,11 @@ export function AddScheduleModal({
               mode === "copy"
                 ? clampDateToRange(getTodayInChina(), dateRange)
                 : schedule.date,
-            time: schedule.time,
             stage: schedule.stage,
-            interviewRound:
-              normalizeInterviewRound(schedule.interviewRound) || inferInterviewRound(schedule.detail),
-            writtenRound:
-              normalizeWrittenRound(schedule.writtenRound) || inferWrittenRound(schedule.detail),
-            offerType: normalizeOfferType(schedule.offerType) || inferOfferType(schedule.detail),
-            detail: schedule.detail,
-            location: schedule.location,
-            notes: schedule.notes,
+            interviewRound: normalizeInterviewRound(schedule.interviewRound),
+            writtenRound: normalizeWrittenRound(schedule.writtenRound),
+            offerType: normalizeOfferType(schedule.offerType),
+            failNote: normalizeFailNote(schedule.failNote),
             sourceLink: schedule.sourceLink || matchingJob?.sourceLink || "",
             batch: normalizeRecruitmentBatch(matchingJob?.batch),
             jd: matchingJob?.jd || "",
@@ -152,12 +144,7 @@ export function AddScheduleModal({
         interviewRound: stage === "面试" && !stageChanged ? current.interviewRound : "",
         writtenRound: stage === "笔试" && !stageChanged ? current.writtenRound : "",
         offerType: stage === "Offer" && !stageChanged ? current.offerType : "",
-        // 时间、事项、地点和备注是旧数据字段：复制时先完整保留，
-        // 只在用户明确切换环节时清空，避免把“完成投递”带到新的面试记录。
-        time: stageChanged ? "" : current.time,
-        detail: stageChanged ? "" : current.detail,
-        location: stageChanged ? "" : current.location,
-        notes: stageChanged ? "" : current.notes,
+        failNote: stage === "未通过" && !stageChanged ? current.failNote : "",
       };
     });
   };
@@ -173,7 +160,7 @@ export function AddScheduleModal({
     setSaving(true);
     setError("");
     try {
-      await onSave(form, mode === "edit" ? schedule?.id : undefined);
+      await onSave(form, mode === "edit" ? schedule?.id : undefined, mode);
       onClose();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "保存失败，请重试");
@@ -261,9 +248,6 @@ export function AddScheduleModal({
               type="date"
               value={form.date}
             />
-            <span className="mt-1.5 block text-[11px] text-slate-400">
-              {formatCohortLabel(selectedGraduationYear)} · {dateRange.startDate} 至 {dateRange.endDate}
-            </span>
           </label>
 
           <label>
@@ -293,59 +277,67 @@ export function AddScheduleModal({
             />
           </div>
 
-          {form.stage === "面试" || form.stage === "笔试" || form.stage === "Offer" ? (
-            <div className="grid grid-cols-6 sm:col-span-2">
-              <label
-                aria-label={
-                  form.stage === "面试"
-                    ? "面试轮次"
-                    : form.stage === "笔试"
-                      ? "笔试轮次"
-                      : "Offer 类型"
+          {form.stage === "面试" || form.stage === "笔试" || form.stage === "未通过" ? (
+            <label>
+              <FieldLabel>
+                {form.stage === "面试"
+                  ? "面试轮次"
+                  : form.stage === "笔试"
+                    ? "笔试轮次"
+                    : "未通过说明"}
+              </FieldLabel>
+              <input
+                className={inputClass}
+                maxLength={12}
+                onChange={(event) =>
+                  update(
+                    form.stage === "面试"
+                      ? "interviewRound"
+                      : form.stage === "笔试"
+                        ? "writtenRound"
+                        : "failNote",
+                    event.target.value,
+                  )
                 }
-                className="w-[176px] max-w-none justify-self-center"
-                style={{ gridColumnStart: STAGES.indexOf(form.stage) + 1 }}
-              >
-                <span className="flex w-full">
-                  <input
-                    className="h-9 min-w-0 flex-1 rounded-l-lg border border-r-0 border-slate-200 bg-white px-2 text-center text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-                    maxLength={form.stage === "Offer" ? 18 : 12}
-                    onChange={(event) => {
-                      if (form.stage === "Offer") {
-                        update("offerType", normalizeOfferType(event.target.value));
-                        return;
-                      }
-                      update(
-                        form.stage === "面试" ? "interviewRound" : "writtenRound",
-                        event.target.value,
-                      );
-                    }}
-                    placeholder={
-                      form.stage === "面试"
-                        ? "AI / 一 / 终"
-                        : form.stage === "笔试"
-                          ? "一 / 二 / 三"
-                          : "实习 / 正式"
-                    }
-                    value={
-                      form.stage === "面试"
-                        ? form.interviewRound || ""
-                        : form.stage === "笔试"
-                          ? form.writtenRound || ""
-                          : getOfferTypePrefix(form.offerType)
-                    }
-                  />
-                  <span
-                    className={cn(
-                      "grid h-9 shrink-0 place-items-center rounded-r-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600",
-                      form.stage === "Offer" ? "w-[52px]" : "w-9",
-                    )}
-                  >
-                    {form.stage === "面试" ? "面" : form.stage === "笔试" ? "笔" : "Offer"}
-                  </span>
+                placeholder={
+                  form.stage === "面试"
+                    ? "一面 / AI面 / 终面"
+                    : form.stage === "笔试"
+                      ? "一笔 / 测评 / 二笔"
+                      : "简历挂 / 笔试挂 / 一面挂"
+                }
+                value={
+                  form.stage === "面试"
+                    ? form.interviewRound || ""
+                    : form.stage === "笔试"
+                      ? form.writtenRound || ""
+                      : form.failNote || ""
+                }
+              />
+              <span className="mt-1.5 block text-[11px] text-slate-400">
+                留空则显示「{form.stage}」，填写后标签原样显示填写内容
+              </span>
+            </label>
+          ) : null}
+
+          {form.stage === "Offer" ? (
+            <label>
+              <FieldLabel>Offer 类型</FieldLabel>
+              <span className="flex w-full">
+                <input
+                  className="h-10 min-w-0 flex-1 rounded-l-lg border border-r-0 border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                  maxLength={18}
+                  onChange={(event) =>
+                    update("offerType", normalizeOfferType(event.target.value))
+                  }
+                  placeholder="实习 / 正式"
+                  value={getOfferTypePrefix(form.offerType)}
+                />
+                <span className="grid h-10 min-w-[52px] shrink-0 place-items-center rounded-r-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600">
+                  Offer
                 </span>
-              </label>
-            </div>
+              </span>
+            </label>
           ) : null}
 
           <label className="sm:col-span-2">

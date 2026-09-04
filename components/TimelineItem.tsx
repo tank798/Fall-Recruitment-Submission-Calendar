@@ -21,6 +21,8 @@ export function TimelineItem({
       onClick={onClick}
       type="button"
     >
+      {/* 头像 + 公司名称作为一组在列内居中；组内头像固定 28px、间距固定 10px、名称左对齐，
+          所以每一行的头像起点与名称起始线都相同。 */}
       <span className="timeline-event-cell justify-center">
         <span className="grid w-[176px] min-w-0 grid-cols-[28px_minmax(0,1fr)] items-center gap-2.5">
           <CompanyAvatar company={schedule.company} size="sm" />
@@ -35,10 +37,10 @@ export function TimelineItem({
       >
         {schedule.position}
       </span>
-      <span className="timeline-event-cell justify-center px-3">
+      <span className="timeline-event-cell justify-center">
         <RecruitmentBatchBadge batch={batch} />
       </span>
-      <span className="timeline-event-cell justify-center px-3">
+      <span className="timeline-event-cell justify-center">
         <StageBadge label={getScheduleStageLabel(schedule)} stage={schedule.stage} />
       </span>
       <span className="timeline-event-cell justify-center px-0">

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   clampDateToRange,
   getTodayInChina,
@@ -6,26 +6,27 @@ import {
   listDatesInRange,
 } from "@/lib/cohort";
 import { sortSchedulesByStagePriority } from "@/lib/date";
-import type { Schedule } from "@/lib/types";
+import { getScheduleStageLabel } from "@/lib/interviewRound";
+import type { Schedule, StageFilterValue } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
 import { HorizontalDateBoard } from "./HorizontalDateBoard";
 import { useRecruitmentCohort } from "./RecruitmentCohortContext";
-import { SearchBar } from "./SearchBar";
-import {
-  TimeAxisStageFilter,
-  type TimeAxisStageFilterValue,
-} from "./TimeAxisStageFilter";
+import { StatusSummaryCards } from "./StatusSummaryCards";
 
 export function TimeAxisPage({
   schedules,
+  search,
+  stageFilter,
+  onStageFilterChange,
   onSelect,
 }: {
   schedules: Schedule[];
+  search: string;
+  stageFilter: StageFilterValue;
+  onStageFilterChange: (value: StageFilterValue) => void;
   onSelect: (schedule: Schedule) => void;
 }) {
   const { dateRange } = useRecruitmentCohort();
-  const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState<TimeAxisStageFilterValue>("全部");
   const today = getTodayInChina();
   const targetDate = clampDateToRange(today, dateRange);
   const dates = useMemo(() => listDatesInRange(dateRange), [dateRange]);
@@ -39,7 +40,9 @@ export function TimeAxisPage({
       if (stageFilter !== "全部" && schedule.stage !== stageFilter) return;
       if (
         query &&
-        !normalizedSearch(`${schedule.company} ${schedule.position}`).includes(query)
+        !normalizedSearch(
+          `${schedule.company} ${schedule.position} ${getScheduleStageLabel(schedule)}`,
+        ).includes(query)
       ) {
         return;
       }
@@ -58,22 +61,17 @@ export function TimeAxisPage({
   return (
     <main
       aria-labelledby="time-axis-tab"
-      className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-white"
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white"
       id="time-axis-panel"
       role="tabpanel"
     >
-      <header className="sticky top-0 z-30 grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-[#e5e6e8] bg-white px-8 py-4">
-        <span aria-hidden="true" />
-        <TimeAxisStageFilter onChange={setStageFilter} value={stageFilter} />
-        <div className="flex justify-end">
-          <SearchBar
-            ariaLabel="搜索时间轴中的公司或岗位"
-            onChange={setSearch}
-            placeholder="搜索公司 / 岗位"
-            value={search}
-          />
-        </div>
-      </header>
+      <section className="shrink-0 border-b border-[#e5e6e8] px-4 py-3 sm:px-8">
+        <StatusSummaryCards
+          onChange={onStageFilterChange}
+          schedules={schedules}
+          value={stageFilter}
+        />
+      </section>
 
       <HorizontalDateBoard
         dates={dates}

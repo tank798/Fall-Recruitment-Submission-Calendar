@@ -1,8 +1,8 @@
 import type { Schedule } from "@/lib/types";
 import { getScheduleStageLabel } from "@/lib/interviewRound";
 import { cn } from "@/lib/utils";
+import { STAGE_STYLES } from "@/lib/stageStyles";
 import { CompanyAvatar } from "./CompanyAvatar";
-import { STAGE_STYLES } from "./StageBadge";
 
 export function TimeAxisEventCard({
   schedule,
@@ -12,10 +12,7 @@ export function TimeAxisEventCard({
   onSelect: (schedule: Schedule) => void;
 }) {
   const stageLabel = getScheduleStageLabel(schedule);
-  const showTime = schedule.stage === "面试" && Boolean(schedule.time);
-  const ariaLabel = [schedule.company, stageLabel, showTime ? schedule.time : ""]
-    .filter(Boolean)
-    .join(" ");
+  const ariaLabel = [schedule.company, stageLabel].filter(Boolean).join(" ");
 
   return (
     <button
@@ -30,18 +27,11 @@ export function TimeAxisEventCard({
           {schedule.company}
         </span>
       </span>
-      <span className="mt-2 flex min-w-0 items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span
-            className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STAGE_STYLES[schedule.stage].dot)}
-          />
-          <span className="truncate text-xs font-medium text-[#646a73]">{stageLabel}</span>
-        </span>
-        {showTime ? (
-          <span className="shrink-0 tabular-nums text-xs text-[#8f959e]">
-            {schedule.time}
-          </span>
-        ) : null}
+      <span className="mt-2 flex min-w-0 items-center gap-1.5">
+        <span
+          className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STAGE_STYLES[schedule.stage].dot)}
+        />
+        <span className="truncate text-xs font-medium text-[#646a73]">{stageLabel}</span>
       </span>
     </button>
   );

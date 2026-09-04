@@ -3,7 +3,7 @@ import path from "node:path";
 import * as XLSX from "xlsx";
 import { classifyCompany } from "./companyClassifier";
 import { getCompanyMatchKey } from "./companyNames";
-import { inferInterviewRound, normalizeInterviewRound } from "./interviewRound";
+import { inferInterviewRound, normalizeFailNote, normalizeInterviewRound } from "./interviewRound";
 import { inferOfferType, normalizeOfferType } from "./offerType";
 import { inferWrittenRound, normalizeWrittenRound } from "./writtenRound";
 import { STAGES, type Job, type RecruitmentStore, type Schedule, type Stage } from "./types";
@@ -24,14 +24,12 @@ const CANONICAL_ALIASES = {
   company: ["公司", "企业", "公司名称"],
   position: ["岗位", "职位", "岗位名称", "职位名称"],
   date: ["日期", "日程日期"],
-  time: ["时间"],
   stage: ["环节", "阶段"],
   interviewRound: ["面试轮次", "面试阶段"],
   writtenRound: ["笔试轮次", "笔试阶段"],
   offerType: ["Offer类型", "Offer阶段", "录用类型"],
+  failNote: ["未通过说明", "未通过备注", "拒绝原因", "挂因"],
   detail: ["具体事项", "事项", "详情"],
-  location: ["地点", "会议方式"],
-  notes: ["备注"],
   sourceLink: ["来源链接", "链接", "申请链接", "投递链接"],
   source: ["记录来源", "来源"],
   id: ["记录ID", "日程ID", "ID"],
@@ -121,8 +119,10 @@ function inferStage(detail: string): Stage {
   const text = detail.toLocaleLowerCase();
   if (/(未通过|不通过|淘汰|拒绝|感谢信)/i.test(text)) return "未通过";
   if (/offer/i.test(text)) return "Offer";
-  if (/(笔试|机试|机考|上机|编程题|在线考试|专业笔试)/i.test(text)) return "笔试";
-  if (/(测评|测试|assessment)/i.test(text)) return "测评";
+  // 测评已并入笔试：测评类关键词统一归为笔试，个性化文案单独兜底为“测评”。
+  if (/(笔试|机试|机考|上机|编程题|在线考试|专业笔试|测评|测试|assessment)/i.test(text)) {
+    return "笔试";
+  }
   if (
     /(面试|群面|终面|专业面|综合面|部门面|交叉面|复试|初试|无领导|hr\s*面|主管面|业务面|ai\s*面|面谈|\d+v\d+|[一二三四五六七八九十0-9]+面)/i.test(
       text,
@@ -133,13 +133,17 @@ function inferStage(detail: string): Stage {
   return "投递";
 }
 
+/** 测评类文本归入笔试后，用“测评”作为默认个性化文案。 */
+function inferAssessmentLabel(detail: string) {
+  return /(测评|测试|assessment)/i.test(detail) ? "测评" : "";
+}
+
 function isStage(value: string): value is Stage {
   return (STAGES as readonly string[]).includes(value);
 }
 
 interface ParsedProgress {
   date: string;
-  time: string;
   detail: string;
   stage: Stage;
 }
@@ -156,9 +160,7 @@ function parseProgressLine(
   const text = line.trim();
   if (!text) return null;
 
-  const match = text.match(
-    /^(?:(\d{4})[/\.\-])?(\d{1,2})[/\.\-](\d{1,2})(?:\s+((?:[01]\d|2[0-3]):[0-5]\d))?\s*(.*)$/,
-  );
+  const match = text.match(/^(?:(\d{4})[/\.\-])?(\d{1,2})[/\.\-](\d{1,2})\s*(.*)$/);
   if (!match) return null;
 
   const hasExplicitYear = Boolean(match[1]);
@@ -172,8 +174,8 @@ function parseProgressLine(
     if (!date) return null;
   }
 
-  const detail = match[5].trim() || "进度更新";
-  return { date, time: match[4] || "", detail, stage: inferStage(detail) };
+  const detail = match[4].trim() || "进度更新";
+  return { date, detail, stage: inferStage(detail) };
 }
 
 function workbookRows(workbook: XLSX.WorkBook, preferredName: string, fallbackIndex: number) {
@@ -302,7 +304,6 @@ function parseCanonicalSchedules(
       company,
       position,
       date,
-      time: clean(row[columns.time]),
       stage,
       interviewRound:
         stage === "面试"
@@ -310,15 +311,15 @@ function parseCanonicalSchedules(
           : "",
       writtenRound:
         stage === "笔试"
-          ? normalizeWrittenRound(clean(row[columns.writtenRound])) || inferWrittenRound(detail)
+          ? normalizeWrittenRound(clean(row[columns.writtenRound])) ||
+            inferWrittenRound(detail) ||
+            inferAssessmentLabel(`${rawStage} ${detail}`)
           : "",
       offerType:
         stage === "Offer"
           ? normalizeOfferType(clean(row[columns.offerType])) || inferOfferType(detail)
           : "",
-      detail,
-      location: stage === "面试" ? clean(row[columns.location]) : "",
-      notes: clean(row[columns.notes]),
+      failNote: stage === "未通过" ? normalizeFailNote(clean(row[columns.failNote])) : "",
       sourceLink: clean(row[columns.sourceLink]) || undefined,
       source,
       createdAt: clean(row[columns.createdAt]) || importedAt,
@@ -347,26 +348,24 @@ export function parseSourceWorkbook(sourceFile: string): RecruitmentStore {
     company: findColumn(overviewHeaders, CANONICAL_ALIASES.company),
     position: findColumn(overviewHeaders, CANONICAL_ALIASES.position),
     date: findColumn(overviewHeaders, CANONICAL_ALIASES.date),
-    time: findColumn(overviewHeaders, CANONICAL_ALIASES.time),
     stage: findColumn(overviewHeaders, CANONICAL_ALIASES.stage),
     interviewRound: findColumn(overviewHeaders, CANONICAL_ALIASES.interviewRound),
     writtenRound: findColumn(overviewHeaders, CANONICAL_ALIASES.writtenRound),
     offerType: findColumn(overviewHeaders, CANONICAL_ALIASES.offerType),
+    failNote: findColumn(overviewHeaders, CANONICAL_ALIASES.failNote),
     detail: findColumn(overviewHeaders, CANONICAL_ALIASES.detail),
-    location: findColumn(overviewHeaders, CANONICAL_ALIASES.location),
-    notes: findColumn(overviewHeaders, CANONICAL_ALIASES.notes),
     sourceLink: findColumn(overviewHeaders, CANONICAL_ALIASES.sourceLink),
     source: findColumn(overviewHeaders, CANONICAL_ALIASES.source),
     id: findColumn(overviewHeaders, CANONICAL_ALIASES.id),
     createdAt: findColumn(overviewHeaders, CANONICAL_ALIASES.createdAt),
     updatedAt: findColumn(overviewHeaders, CANONICAL_ALIASES.updatedAt),
   };
+  // 「具体事项」列已废弃，存在与否不再影响规范表判定。
   const isCanonical =
     canonicalColumns.company >= 0 &&
     canonicalColumns.position >= 0 &&
     canonicalColumns.date >= 0 &&
-    canonicalColumns.stage >= 0 &&
-    canonicalColumns.detail >= 0;
+    canonicalColumns.stage >= 0;
 
   let schedules: Schedule[];
   if (isCanonical) {
@@ -402,11 +401,7 @@ export function parseSourceWorkbook(sourceFile: string): RecruitmentStore {
           company,
           position,
           date: applicationDate,
-          time: "",
           stage: "投递",
-          detail: "完成投递",
-          location: "",
-          notes: batch ? `招聘批次：${batch}` : "",
           sourceLink: sourceLink || undefined,
           source: "excel",
           createdAt: importedAt,
@@ -435,14 +430,17 @@ export function parseSourceWorkbook(sourceFile: string): RecruitmentStore {
           company,
           position,
           date: parsed.date,
-          time: parsed.time,
           stage: parsed.stage,
           interviewRound: parsed.stage === "面试" ? inferInterviewRound(parsed.detail) : "",
-          writtenRound: parsed.stage === "笔试" ? inferWrittenRound(parsed.detail) : "",
+          writtenRound:
+            parsed.stage === "笔试"
+              ? inferWrittenRound(parsed.detail) || inferAssessmentLabel(parsed.detail)
+              : "",
           offerType: parsed.stage === "Offer" ? inferOfferType(parsed.detail) : "",
-          detail: parsed.detail,
-          location: "",
-          notes: batch ? `招聘批次：${batch}` : "",
+          failNote:
+            parsed.stage === "未通过"
+              ? normalizeFailNote(parsed.detail === "进度更新" ? "" : parsed.detail)
+              : "",
           sourceLink: sourceLink || undefined,
           source: "excel",
           createdAt: importedAt,
@@ -450,22 +448,15 @@ export function parseSourceWorkbook(sourceFile: string): RecruitmentStore {
         });
       });
 
+      // 未标注日期的进展不再塞进日程备注，统一挂在岗位的 pendingProgress 上。
       const pendingProgress = undatedProgress.join("；");
-      if (pendingProgress && applicationSchedule) {
-        applicationSchedule.notes = [
-          applicationSchedule.notes,
-          `未标注日期的进展：${pendingProgress}`,
-        ]
-          .filter(Boolean)
-          .join("\n");
-      }
 
       upsertJob(jobsByKey, {
         company,
         position,
         sourceLink,
         batch,
-        pendingProgress: applicationSchedule ? undefined : pendingProgress,
+        pendingProgress: pendingProgress || undefined,
       });
     });
   }

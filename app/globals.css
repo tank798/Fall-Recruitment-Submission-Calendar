@@ -70,21 +70,16 @@ a {
   }
 }
 
+/* 全局隐藏显式滚动条（保留滚动能力，滚轮/触控板/拖拽不受影响） */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background: #cbd5e1;
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-  background-clip: padding-box;
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .timeline-table {
@@ -116,19 +111,7 @@ a {
   padding-inline: 16px;
 }
 
-.axis-scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.axis-scrollbar-none::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
 .time-axis-board {
-  min-height: calc(100dvh - 137px);
   touch-action: auto;
   outline: none;
 }
@@ -138,14 +121,16 @@ a {
 }
 
 .time-axis-column {
-  flex: 0 0 calc(100% / 7);
-  min-width: 160px;
+  /* 固定列宽，保证 snap 吸附点精确（snap-start 对齐每列左缘）；
+     列高至少撑满看板，事件多时按内容撑高，纵向滚动由看板承担。 */
+  flex: 0 0 200px;
+  min-height: 100%;
 }
 
 .time-axis-events {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
-  min-height: calc(100dvh - 203px);
   overscroll-behavior: contain;
 }
 

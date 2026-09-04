@@ -11,6 +11,9 @@ data/*.tmp
 data/.write.lock
 data/backups/
 data/quarantine/
+data/manual-backups/
+data/data.backup-*.json
+data/data.pre-migrate.json
 # 本地真实数据永不进入公开仓库；首次克隆会由 demo-data.json 自动初始化。
 data/data.json
 秋招进度.xlsx

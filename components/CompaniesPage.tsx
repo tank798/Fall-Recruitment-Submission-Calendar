@@ -1,25 +1,47 @@
-import { BriefcaseBusiness, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
-import { getCompanyDisplayName } from "@/lib/companyNames";
-import type { Job } from "@/lib/types";
+import { useMemo } from "react";
+import { getCompanyDisplayName, getCompanyMatchKey } from "@/lib/companyNames";
+import type { Job, Schedule, StageFilterValue } from "@/lib/types";
 import { cn, normalizedSearch } from "@/lib/utils";
 import { CompanyAvatar } from "./CompanyAvatar";
-import { SearchBar } from "./SearchBar";
+import { StatusSummaryCards } from "./StatusSummaryCards";
 
-export function CompaniesPage({ jobs, onSelect }: { jobs: Job[]; onSelect: (job: Job) => void }) {
-  const [query, setQuery] = useState("");
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-
+export function CompaniesPage({
+  jobs,
+  schedules,
+  search,
+  stageFilter,
+  selectedCompany,
+  onSelectCompany,
+  onStageFilterChange,
+}: {
+  jobs: Job[];
+  schedules: Schedule[];
+  search: string;
+  stageFilter: StageFilterValue;
+  selectedCompany: string | null;
+  onSelectCompany: (company: string | null) => void;
+  onStageFilterChange: (value: StageFilterValue) => void;
+}) {
   const companies = useMemo(() => {
+    const visibleJobKeys = new Set(
+      schedules
+        .filter((schedule) => stageFilter === "全部" || schedule.stage === stageFilter)
+        .map(
+          (schedule) =>
+            `${getCompanyMatchKey(schedule.company)}::${normalizedSearch(schedule.position)}`,
+        ),
+    );
     const grouped = new Map<string, Job[]>();
     jobs.forEach((job) => {
+      const key = `${getCompanyMatchKey(job.company)}::${normalizedSearch(job.position)}`;
+      if (!visibleJobKeys.has(key)) return;
       const company = getCompanyDisplayName(job.company);
       const collection = grouped.get(company) || [];
       collection.push(job);
       grouped.set(company, collection);
     });
 
-    const searchTerm = normalizedSearch(query);
+    const searchTerm = normalizedSearch(search);
     return [...grouped.entries()]
       .map(([company, companyJobs]) => ({
         company,
@@ -31,16 +53,13 @@ export function CompaniesPage({ jobs, onSelect }: { jobs: Job[]; onSelect: (job:
           normalizedSearch(company).includes(searchTerm) ||
           companyJobs.some((job) => normalizedSearch(job.position).includes(searchTerm)),
       )
-      .sort((a, b) => a.company.localeCompare(b.company, "zh-CN"));
-  }, [jobs, query]);
-
-  const activeCompany = companies.find(({ company }) => company === selectedCompany);
-  const searchTerm = normalizedSearch(query);
-  const visibleJobs = activeCompany
-    ? searchTerm && !normalizedSearch(activeCompany.company).includes(searchTerm)
-      ? activeCompany.jobs.filter((job) => normalizedSearch(job.position).includes(searchTerm))
-      : activeCompany.jobs
-    : [];
+      // 按投递岗位数从高到低排序；数量相同时按公司名排序，保证顺序稳定。
+      .sort(
+        (a, b) =>
+          b.jobs.length - a.jobs.length ||
+          a.company.localeCompare(b.company, "zh-CN"),
+      );
+  }, [jobs, schedules, search, stageFilter]);
 
   return (
     <main
@@ -49,34 +68,31 @@ export function CompaniesPage({ jobs, onSelect }: { jobs: Job[]; onSelect: (job:
       id="companies-panel"
       role="tabpanel"
     >
-      <header className="flex items-center justify-end border-b border-[#e5e6e8] px-8 py-4">
-        <SearchBar
-          ariaLabel="搜索公司或岗位"
-          onChange={setQuery}
-          placeholder="搜索公司 / 岗位"
-          value={query}
+      <section className="shrink-0 border-b border-[#e5e6e8] px-4 py-3 sm:px-8">
+        <StatusSummaryCards
+          onChange={onStageFilterChange}
+          schedules={schedules}
+          value={stageFilter}
         />
-      </header>
+      </section>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[#f7f8fa] px-8 pb-9 pt-6">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[#f7f8fa] px-6 pb-9 pt-6 sm:px-8">
         {companies.length ? (
           <div className="mx-auto max-w-[1320px]">
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
               {companies.map(({ company, jobs: companyJobs }) => {
-                const isActive = activeCompany?.company === company;
+                const isActive = selectedCompany === company;
                 return (
                   <button
                     aria-pressed={isActive}
                     className={cn(
-                      "group flex aspect-[3/1] min-h-[64px] min-w-0 items-center gap-2.5 rounded-[10px] border bg-white px-3 text-left shadow-[0_1px_2px_rgba(31,35,41,0.03)] transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-px hover:border-[#c9cdd4] hover:shadow-[0_4px_12px_rgba(31,35,41,0.07)]",
+                      "group flex min-h-[64px] min-w-0 items-center gap-2.5 rounded-[10px] border bg-white px-3 text-left shadow-[0_1px_2px_rgba(31,35,41,0.03)] transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-px hover:border-[#c9cdd4] hover:shadow-[0_4px_12px_rgba(31,35,41,0.07)]",
                       isActive
                         ? "border-[#85a8ff] bg-[#f5f8ff] shadow-[0_0_0_1px_rgba(51,112,255,0.07)]"
                         : "border-[#dee0e3]",
                     )}
                     key={company}
-                    onClick={() =>
-                      setSelectedCompany((current) => (current === company ? null : company))
-                    }
+                    onClick={() => onSelectCompany(isActive ? null : company)}
                     type="button"
                   >
                     <CompanyAvatar company={company} size="sm" />
@@ -92,43 +108,6 @@ export function CompaniesPage({ jobs, onSelect }: { jobs: Job[]; onSelect: (job:
                 );
               })}
             </div>
-
-            {activeCompany ? (
-              <section className="mt-5 overflow-hidden rounded-xl border border-[#dee0e3] bg-white shadow-[0_1px_2px_rgba(31,35,41,0.02)]">
-                <div className="flex items-center gap-3 border-b border-[#eff0f1] px-5 py-3.5">
-                  <CompanyAvatar company={activeCompany.company} />
-                  <div className="min-w-0">
-                    <h2 className="truncate text-sm font-semibold text-[#1f2329]">
-                      {activeCompany.company}
-                    </h2>
-                    <p className="mt-0.5 text-xs text-[#8f959e]">{visibleJobs.length} 个岗位</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2">
-                  {visibleJobs.map((job, index) => (
-                    <button
-                      className={cn(
-                        "group flex min-w-0 items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-[#f7f8fa]",
-                        index % 2 === 0 && "border-r border-[#eff0f1]",
-                        index >= 2 && "border-t border-[#eff0f1]",
-                      )}
-                      key={job.id}
-                      onClick={() => onSelect(job)}
-                      type="button"
-                    >
-                      <BriefcaseBusiness className="h-4 w-4 shrink-0 text-[#a8abb2] group-hover:text-[#3370ff]" />
-                      <span className="min-w-0 flex-1 truncate text-sm text-[#3b3f45] group-hover:text-[#1f2329]">
-                        {job.position}
-                      </span>
-                      {!job.jd ? (
-                        <span className="shrink-0 text-[11px] text-[#a8abb2]">JD 待补充</span>
-                      ) : null}
-                      <ChevronRight className="h-4 w-4 shrink-0 text-[#c9cdd4] group-hover:text-[#8f959e]" />
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ) : null}
           </div>
         ) : (
           <div className="grid min-h-60 place-items-center text-sm text-[#8f959e]">

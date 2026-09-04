@@ -40,8 +40,8 @@ export function SlidingSegmentedControl<Value extends string>({
         <button
           aria-selected={value === option}
           className={cn(
-            "relative z-10 min-w-0 rounded-[9px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30",
-            compact ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm",
+            "relative z-10 min-w-0 whitespace-nowrap rounded-[9px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30",
+            compact ? "h-8 px-3 text-xs" : "h-9 px-3 text-sm",
             value === option ? "text-[#1f2329]" : "text-[#646a73] hover:text-[#1f2329]",
           )}
           key={option}

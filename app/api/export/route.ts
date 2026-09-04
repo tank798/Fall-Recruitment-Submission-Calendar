@@ -1,6 +1,7 @@
 import { getDataStore } from "@/lib/dataStore";
 import { exportStoreToExcel } from "@/lib/excelExport";
 import { getCohortDateRange, isDateInRange } from "@/lib/cohort";
+import { getScheduleStageLabel } from "@/lib/interviewRound";
 import { STAGES, type Stage } from "@/lib/types";
 import { getCompanyMatchKey } from "@/lib/companyNames";
 import { normalizedSearch } from "@/lib/utils";
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
     if (stage !== "全部" && schedule.stage !== stage) return false;
     if (!search) return true;
     return normalizedSearch(
-      `${schedule.company} ${schedule.position} ${schedule.stage} ${schedule.detail} ${schedule.location}`,
+      `${schedule.company} ${schedule.position} ${schedule.stage} ${getScheduleStageLabel(schedule)}`,
     ).includes(search);
   });
   const jobKeys = new Set(

@@ -17,7 +17,8 @@
       "sourceLink": "https://example.com/jobs/aurora-ai-pm",
       "source": "web",
       "createdAt": "2026-09-02T00:00:00.000Z",
-      "updatedAt": "2026-09-02T00:00:00.000Z"
+      "updatedAt": "2026-09-02T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_interview_ocean",
@@ -26,14 +27,15 @@
       "date": "2026-09-01",
       "time": "15:00",
       "stage": "面试",
-      "interviewRound": "二",
+      "interviewRound": "二面",
       "detail": "二面",
       "location": "",
       "notes": "",
       "sourceLink": "https://example.com/jobs/ocean-strategy",
       "source": "web",
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "updatedAt": "2026-09-01T00:00:00.000Z"
+      "updatedAt": "2026-09-01T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_exam_cloudbank",
@@ -42,14 +44,15 @@
       "date": "2026-09-01",
       "time": "",
       "stage": "笔试",
-      "writtenRound": "二",
+      "writtenRound": "二笔",
       "detail": "二笔",
       "location": "",
       "notes": "",
       "sourceLink": "https://example.com/jobs/cloud-bank-mt",
       "source": "web",
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "updatedAt": "2026-09-01T00:00:00.000Z"
+      "updatedAt": "2026-09-01T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_assessment_aurora",
@@ -57,14 +60,16 @@
       "position": "AI 产品经理培训生",
       "date": "2026-08-31",
       "time": "",
-      "stage": "测评",
+      "stage": "笔试",
       "detail": "在线测评",
       "location": "",
       "notes": "",
       "sourceLink": "https://example.com/jobs/aurora-ai-pm",
       "source": "web",
       "createdAt": "2026-08-31T00:00:00.000Z",
-      "updatedAt": "2026-08-31T00:00:00.000Z"
+      "updatedAt": "2026-08-31T00:00:00.000Z",
+      "writtenRound": "测评",
+      "failNote": ""
     },
     {
       "id": "demo_interview_capital",
@@ -73,14 +78,15 @@
       "date": "2026-08-30",
       "time": "10:30",
       "stage": "面试",
-      "interviewRound": "一",
+      "interviewRound": "一面",
       "detail": "一面",
       "location": "",
       "notes": "",
       "sourceLink": "https://example.com/jobs/farhill-investment",
       "source": "web",
       "createdAt": "2026-08-30T00:00:00.000Z",
-      "updatedAt": "2026-08-30T00:00:00.000Z"
+      "updatedAt": "2026-08-30T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_exam_consumer",
@@ -89,14 +95,15 @@
       "date": "2026-08-29",
       "time": "",
       "stage": "笔试",
-      "writtenRound": "一",
+      "writtenRound": "一笔",
       "detail": "一笔",
       "location": "",
       "notes": "",
       "sourceLink": "https://example.com/jobs/green-brand",
       "source": "web",
       "createdAt": "2026-08-29T00:00:00.000Z",
-      "updatedAt": "2026-08-29T00:00:00.000Z"
+      "updatedAt": "2026-08-29T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_apply_robotics",
@@ -111,7 +118,8 @@
       "sourceLink": "https://example.com/jobs/polaris-ba",
       "source": "web",
       "createdAt": "2026-08-28T00:00:00.000Z",
-      "updatedAt": "2026-08-28T00:00:00.000Z"
+      "updatedAt": "2026-08-28T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_apply_cloudbank",
@@ -126,7 +134,8 @@
       "sourceLink": "https://example.com/jobs/cloud-bank-mt",
       "source": "web",
       "createdAt": "2026-08-27T00:00:00.000Z",
-      "updatedAt": "2026-08-27T00:00:00.000Z"
+      "updatedAt": "2026-08-27T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_apply_capital",
@@ -141,7 +150,8 @@
       "sourceLink": "https://example.com/jobs/farhill-investment",
       "source": "web",
       "createdAt": "2026-08-25T00:00:00.000Z",
-      "updatedAt": "2026-08-25T00:00:00.000Z"
+      "updatedAt": "2026-08-25T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_apply_ocean",
@@ -156,7 +166,8 @@
       "sourceLink": "https://example.com/jobs/ocean-strategy",
       "source": "web",
       "createdAt": "2026-08-23T00:00:00.000Z",
-      "updatedAt": "2026-08-23T00:00:00.000Z"
+      "updatedAt": "2026-08-23T00:00:00.000Z",
+      "failNote": ""
     },
     {
       "id": "demo_apply_aurora",
@@ -171,7 +182,8 @@
       "sourceLink": "https://example.com/jobs/aurora-ai-pm",
       "source": "web",
       "createdAt": "2026-08-20T00:00:00.000Z",
-      "updatedAt": "2026-08-20T00:00:00.000Z"
+      "updatedAt": "2026-08-20T00:00:00.000Z",
+      "failNote": ""
     }
   ],
   "jobs": [

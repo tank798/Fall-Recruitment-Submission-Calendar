@@ -9,19 +9,16 @@ export function exportStoreToExcel(store: RecruitmentStore) {
   const workbook = XLSX.utils.book_new();
   const scheduleRows = store.schedules
     .slice()
-    .sort((left, right) => right.date.localeCompare(left.date) || left.time.localeCompare(right.time))
+    .sort((left, right) => right.date.localeCompare(left.date))
     .map((schedule) => ({
       公司: schedule.company,
       岗位: schedule.position,
       日期: schedule.date,
-      时间: schedule.time,
       环节: schedule.stage,
       面试轮次: schedule.interviewRound || "",
       笔试轮次: schedule.writtenRound || "",
       Offer类型: schedule.offerType || "",
-      具体事项: schedule.detail,
-      地点: schedule.location,
-      备注: schedule.notes,
+      未通过说明: schedule.failNote || "",
       来源链接: schedule.sourceLink || "",
       记录来源: schedule.source,
       记录ID: schedule.id,
@@ -33,14 +30,11 @@ export function exportStoreToExcel(store: RecruitmentStore) {
       "公司",
       "岗位",
       "日期",
-      "时间",
       "环节",
       "面试轮次",
       "笔试轮次",
       "Offer类型",
-      "具体事项",
-      "地点",
-      "备注",
+      "未通过说明",
       "来源链接",
       "记录来源",
       "记录ID",
@@ -48,8 +42,8 @@ export function exportStoreToExcel(store: RecruitmentStore) {
       "更新时间",
     ],
   });
-  setWidths(scheduleSheet, [18, 28, 13, 9, 10, 12, 12, 16, 30, 24, 36, 45, 12, 24, 24, 24]);
-  scheduleSheet["!autofilter"] = { ref: scheduleSheet["!ref"] || "A1:P1" };
+  setWidths(scheduleSheet, [18, 28, 13, 10, 12, 12, 16, 14, 45, 12, 24, 24, 24]);
+  scheduleSheet["!autofilter"] = { ref: scheduleSheet["!ref"] || "A1:M1" };
   // 导出的第一张表使用与解析器一致的规范列名，能够无损回导。
   XLSX.utils.book_append_sheet(workbook, scheduleSheet, "总览");
 

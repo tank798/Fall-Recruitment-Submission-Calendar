@@ -19,10 +19,8 @@ export function sortSchedules(schedules: Schedule[]) {
     const dateOrder = right.date.localeCompare(left.date);
     if (dateOrder !== 0) return dateOrder;
 
-    const leftTime = left.time || "99:99";
-    const rightTime = right.time || "99:99";
-    const timeOrder = leftTime.localeCompare(rightTime);
-    if (timeOrder !== 0) return timeOrder;
+    const stageOrder = STAGE_PRIORITY[left.stage] - STAGE_PRIORITY[right.stage];
+    if (stageOrder !== 0) return stageOrder;
 
     return left.company.localeCompare(right.company, "zh-CN");
   });
@@ -32,9 +30,8 @@ const STAGE_PRIORITY: Record<Stage, number> = {
   Offer: 1,
   面试: 2,
   笔试: 3,
-  测评: 4,
-  投递: 5,
-  未通过: 6,
+  投递: 4,
+  未通过: 5,
 };
 
 export function sortSchedulesByStagePriority(schedules: Schedule[]) {
@@ -42,13 +39,6 @@ export function sortSchedulesByStagePriority(schedules: Schedule[]) {
     const stageOrder = STAGE_PRIORITY[left.stage] - STAGE_PRIORITY[right.stage];
     if (stageOrder !== 0) return stageOrder;
 
-    const timeOrder = (left.time || "99:99").localeCompare(right.time || "99:99");
-    if (timeOrder !== 0) return timeOrder;
-
     return left.company.localeCompare(right.company, "zh-CN");
   });
-}
-
-export function formatShortDateTime(date: string, time: string) {
-  return `${date.replaceAll("-", ".")}${time ? ` · ${time}` : ""}`;
 }

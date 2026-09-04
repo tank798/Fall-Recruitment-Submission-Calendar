@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Schedule } from "@/lib/types";
 import { DateColumn } from "./DateColumn";
+import { TimeAxisMonthRuler } from "./TimeAxisMonthRuler";
 
 interface DragState {
   active: boolean;
@@ -123,29 +124,33 @@ export function HorizontalDateBoard({
   };
 
   return (
-    <div
-      aria-label="按日期横向浏览日程"
-      className="time-axis-board axis-scrollbar-none flex w-full shrink-0 select-none overflow-x-auto overscroll-x-contain"
-      onClickCapture={preventClickAfterDrag}
-      onDragStart={(event) => event.preventDefault()}
-      onKeyDown={handleKeyDown}
-      onPointerCancel={endDrag}
-      onPointerDown={startDrag}
-      onPointerMove={moveDrag}
-      onPointerUp={endDrag}
-      ref={boardRef}
-      role="region"
-      tabIndex={0}
-    >
-      {dates.map((date) => (
-        <DateColumn
-          date={date}
-          key={date}
-          onSelect={onSelect}
-          schedules={schedulesByDate.get(date) || []}
-          today={today}
-        />
-      ))}
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <TimeAxisMonthRuler boardRef={boardRef} dates={dates} today={today} />
+      {/* 看板是唯一滚动容器：横向滚动 + snap 吸附；纵向滚动时日期头 sticky 吸顶 */}
+      <div
+        aria-label="按日期横向浏览日程"
+        className="time-axis-board flex min-h-0 w-full flex-1 select-none snap-x snap-mandatory overflow-auto overscroll-x-contain"
+        onClickCapture={preventClickAfterDrag}
+        onDragStart={(event) => event.preventDefault()}
+        onKeyDown={handleKeyDown}
+        onPointerCancel={endDrag}
+        onPointerDown={startDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={endDrag}
+        ref={boardRef}
+        role="region"
+        tabIndex={0}
+      >
+        {dates.map((date) => (
+          <DateColumn
+            date={date}
+            key={date}
+            onSelect={onSelect}
+            schedules={schedulesByDate.get(date) || []}
+            today={today}
+          />
+        ))}
+      </div>
     </div>
   );
 }
