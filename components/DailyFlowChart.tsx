@@ -7,6 +7,11 @@ import { SlidingSegmentedControl } from "./SlidingSegmentedControl";
 
 type ChartMode = "heatmap" | "bars";
 
+// 每个日期使用固定的横向槽位，避免日期少时被拉伸、日期多时被压缩。
+// 热力图色块仍保持小方块，日期轴超出可视区域后由右侧主体负责横向滚动。
+const FLOW_CELL_WIDTH = 26;
+const FLOW_LABEL_SLOT = 40;
+
 const STAGE_HEX: Record<Stage, string> = {
   投递: "#3370ff",
   笔试: "#06b6d4",
@@ -50,7 +55,7 @@ export function DailyFlowChart({ schedules }: { schedules: Schedule[] }) {
     return { dates, counts };
   }, [schedules]);
 
-  const labelStep = Math.max(1, Math.ceil(data.dates.length / Math.max(1, Math.floor((width - 74) / 56))));
+  const labelStep = Math.max(1, Math.ceil(data.dates.length / Math.max(1, Math.floor((width - 74) / FLOW_LABEL_SLOT))));
 
   return (
     <section aria-labelledby="daily-flow-title" className="rounded-2xl border border-[#e5e7eb] bg-white p-5">
@@ -128,32 +133,46 @@ function Heatmap({
   const maxima = Object.fromEntries(
     STAGES.map((stage) => [stage, Math.max(1, ...dates.map((date) => counts.get(date)![stage]))]),
   ) as Record<Stage, number>;
-  const plotWidth = "100%";
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const columns = `repeat(${dates.length}, ${FLOW_CELL_WIDTH}px)`;
+  const plotWidth = dates.length * FLOW_CELL_WIDTH;
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    // 初次进入或日期范围扩展时，将最新日期保持在可视区域右侧。
+    const frame = window.requestAnimationFrame(() => {
+      scrollElement.scrollLeft = scrollElement.scrollWidth;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [dates.length]);
 
   return (
     <div className="flex min-w-0">
       <div className="w-[74px] shrink-0 pt-14">
         {STAGES.map((stage) => (
-          <div className="flex h-7 items-center text-xs font-medium" key={stage} style={{ color: STAGE_HEX[stage] }}>{stage}</div>
+          <div className="flex h-6 items-center text-xs font-medium" key={stage} style={{ color: STAGE_HEX[stage] }}>{stage}</div>
         ))}
       </div>
-      <div className="chart-scroll min-w-0 flex-1 overflow-x-auto overflow-y-visible pb-2 pt-7">
-        <div style={{ width: plotWidth }}>
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}>
+      <div className="chart-scroll min-w-0 flex-1 overflow-x-auto overflow-y-visible pb-2 pt-7" ref={scrollRef}>
+        <div style={{ width: plotWidth, minWidth: plotWidth }}>
+          <div className="grid" style={{ gridTemplateColumns: columns }}>
             {dates.map((date, index) => (
-              <span className="h-7 whitespace-nowrap text-[10px] tabular-nums text-[#9aa0a8]" key={date}>
+              <span className="flex h-6 w-[26px] items-start justify-center whitespace-nowrap text-[10px] tabular-nums text-[#9aa0a8]" key={date}>
                 {index % labelStep === 0 ? formatShortDate(date) : ""}
               </span>
             ))}
           </div>
           {STAGES.map((stage) => (
-            <div className="grid h-7 items-center" key={stage} style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}>
+            <div className="grid h-6 items-center" key={stage} style={{ gridTemplateColumns: columns }}>
               {dates.map((date) => {
                 const day = counts.get(date)!;
                 const value = day[stage];
                 const alpha = value ? 0.2 + (value / maxima[stage]) * 0.72 : 0.055;
                 return (
-                  <div data-flow-date={date} aria-label={`${date} ${stage} ${value}条`} className="relative h-[18px] border-r-2 border-white rounded-[3px]" key={date} style={{ backgroundColor: value ? `${STAGE_HEX[stage]}${Math.round(alpha * 255).toString(16).padStart(2, "0")}` : "#f1f3f5" }} />
+                  <div data-flow-date={date} aria-label={`${date} ${stage} ${value}条`} className="flex h-6 w-[26px] items-center justify-center border-r border-white" key={date}>
+                    <span className="h-[18px] w-[18px] rounded-[4px]" style={{ backgroundColor: value ? `${STAGE_HEX[stage]}${Math.round(alpha * 255).toString(16).padStart(2, "0")}` : "#f1f3f5" }} />
+                  </div>
                 );
               })}
             </div>
@@ -175,21 +194,32 @@ function StackedBars({
 }) {
   const totals = dates.map((date) => STAGES.reduce((sum, stage) => sum + counts.get(date)![stage], 0));
   const maxTotal = Math.max(1, ...totals);
-  const plotWidth = "100%";
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const plotWidth = dates.length * FLOW_CELL_WIDTH;
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    const frame = window.requestAnimationFrame(() => {
+      scrollElement.scrollLeft = scrollElement.scrollWidth;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [dates.length]);
+
   return (
-    <div className="chart-scroll relative pb-7 pt-7">
+    <div className="chart-scroll relative min-w-0 overflow-x-auto pb-7 pt-7" ref={scrollRef}>
       <span className="absolute left-0 top-0 text-[10px] text-[#9aa0a8]">{maxTotal} 条</span>
-      <div className="flex h-[190px] items-end border-b border-[#e5e7eb]" style={{ width: plotWidth }}>
+      <div className="flex h-[190px] items-end border-b border-[#e5e7eb]" style={{ width: plotWidth, minWidth: plotWidth }}>
         {dates.map((date, index) => {
           const day = counts.get(date)!;
           return (
-            <div data-flow-date={date} className="group relative flex h-full min-w-0 flex-1 flex-col justify-end border-r-2 border-white" key={date}>
-              <div className="flex w-full flex-col justify-end overflow-hidden rounded-t-[4px]" style={{ height: `${(totals[index] / maxTotal) * 154}px` }}>
+            <div data-flow-date={date} className="group relative flex h-full w-[26px] shrink-0 flex-col justify-end border-r border-white" key={date}>
+              <div className="mx-auto flex w-[18px] flex-col justify-end overflow-hidden rounded-t-[4px]" style={{ height: `${(totals[index] / maxTotal) * 154}px` }}>
                 {[...STAGES].reverse().map((stage) => day[stage] ? (
                   <span key={stage} style={{ backgroundColor: STAGE_HEX[stage], height: `${(day[stage] / Math.max(1, totals[index])) * 100}%` }} />
                 ) : null)}
               </div>
-              <span className="absolute top-[calc(100%+7px)] left-0 whitespace-nowrap text-[10px] tabular-nums text-[#9aa0a8]">
+              <span className="absolute left-0 top-[calc(100%+7px)] flex w-[26px] justify-center whitespace-nowrap text-[10px] tabular-nums text-[#9aa0a8]">
                 {index % labelStep === 0 ? formatShortDate(date) : ""}
               </span>
             </div>
