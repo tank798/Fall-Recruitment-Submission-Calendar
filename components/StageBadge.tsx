@@ -10,7 +10,6 @@ export function StageBadge({ stage, label }: { stage: Stage; label?: string }) {
         STAGE_STYLES[stage].badge,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", STAGE_STYLES[stage].dot)} />
       {label || stage}
     </span>
   );

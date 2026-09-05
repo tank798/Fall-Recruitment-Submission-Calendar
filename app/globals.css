@@ -57,8 +57,54 @@ a {
   grid-template-columns: repeat(var(--segment-count), minmax(0, 1fr));
 }
 
+.kpi-percentage {
+  position: absolute;
+  right: 14px;
+  bottom: 11px;
+  width: auto;
+  min-width: 44px;
+  height: 24px;
+  perspective: 500px;
+  border-radius: 4px;
+  border: 0;
+  background: transparent;
+}
+.kpi-percentage:focus-visible { outline: 2px solid #bfd0ff; outline-offset: 2px; }
+.kpi-percentage-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.kpi-percentage-inner.is-flipped { transform: rotateX(180deg); }
+.kpi-percentage-front, .kpi-percentage-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 1px 0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #8f959e;
+}
+.kpi-percentage:hover .kpi-percentage-front { color: #4e5969; }
+.kpi-percentage-back {
+  transform: rotateX(180deg);
+  color: #646a73;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
 .segmented-slider-indicator {
-  width: calc((100% - 8px) / var(--segment-count));
+  width: calc((100% - 6px) / var(--segment-count));
   transition:
     transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
     width 260ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -83,24 +129,21 @@ a {
 }
 
 .timeline-table {
-  --timeline-date-column: 220px;
-  --timeline-event-columns:
-    250px minmax(300px, 1.5fr) 190px minmax(180px, 1fr) 48px;
-  min-width: 1180px;
+  --timeline-date-column: 170px;
+  --timeline-event-columns: 230px minmax(380px, 1.8fr) 140px minmax(170px, 1fr) 48px;
+  --timeline-columns:
+    var(--timeline-date-column) var(--timeline-event-columns);
+  min-width: 1200px;
 }
 
 .timeline-table-header {
-  grid-template-columns: var(--timeline-date-column) var(--timeline-event-columns);
-}
-
-.timeline-date-group {
-  grid-template-columns: var(--timeline-date-column) minmax(0, 1fr);
+  grid-template-columns: var(--timeline-columns);
 }
 
 .timeline-event-row {
   display: grid;
-  grid-template-columns: var(--timeline-event-columns);
-  height: 62px;
+  grid-template-columns: var(--timeline-columns);
+  height: 60px;
   align-items: stretch;
 }
 
@@ -110,6 +153,9 @@ a {
   align-items: center;
   padding-inline: 16px;
 }
+
+.timeline-date-group { grid-template-columns: var(--timeline-date-column) minmax(0,1fr); }
+.timeline-event-row-grouped { grid-template-columns: var(--timeline-event-columns); }
 
 .time-axis-board {
   touch-action: auto;
@@ -154,6 +200,38 @@ a {
   animation: drawer-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+.chart-crossfade {
+  animation: chart-crossfade 210ms ease-out both;
+}
+
+.month-popover-enter {
+  animation: popover-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.company-focus-enter {
+  animation: company-focus-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.company-directory-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d6d9df transparent;
+}
+
+.company-directory-scroll::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+  height: 6px;
+}
+
+.company-directory-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d6d9df;
+}
+
+.company-directory-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .jd-content {
   overflow-wrap: anywhere;
 }
@@ -166,6 +244,39 @@ a {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes chart-crossfade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popover-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes company-focus-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.965) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 

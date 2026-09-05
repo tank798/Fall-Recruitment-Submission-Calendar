@@ -11,7 +11,7 @@ export const RECRUITMENT_BATCHES = ["提前批", "秋招", "春招", "暑期实�
 
 export type RecruitmentBatch = (typeof RECRUITMENT_BATCHES)[number];
 
-export const COMPANY_CATEGORIES = ["金融公司", "互联网大厂", "实业公司"] as const;
+export const COMPANY_CATEGORIES = ["互联网大厂", "金融公司", "实体企业", "央国企"] as const;
 
 export type CompanyCategory = (typeof COMPANY_CATEGORIES)[number];
 

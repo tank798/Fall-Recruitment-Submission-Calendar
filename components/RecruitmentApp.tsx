@@ -7,17 +7,17 @@ import { getCompanyDisplayName, getCompanyMatchKey } from "@/lib/companyNames";
 import type { RecruitmentStore, Schedule, ScheduleInput } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
 import { AddScheduleModal } from "./AddScheduleModal";
-import { CompaniesPage } from "./CompaniesPage";
 import { CompanyDetailDrawer } from "./CompanyDetailDrawer";
+import { DashboardPage } from "./DashboardPage";
 import {
   RecruitmentCohortProvider,
   useRecruitmentCohort,
 } from "./RecruitmentCohortContext";
 import { ScheduleDetailDrawer } from "./ScheduleDetailDrawer";
 import type { StageFilterValue } from "@/lib/types";
-import { TimeAxisPage } from "./TimeAxisPage";
 import { TimelinePage } from "./TimelinePage";
 import { TopNavigation, type AppView } from "./TopNavigation";
+import { WeeklyCalendarPage } from "./WeeklyCalendarPage";
 
 async function readApiError(response: Response) {
   try {
@@ -38,7 +38,7 @@ export function RecruitmentApp({ initialStore }: { initialStore: RecruitmentStor
 
 function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStore }) {
   const { dateRange, selectedGraduationYear } = useRecruitmentCohort();
-  const [view, setView] = useState<AppView>("timeline");
+  const [view, setView] = useState<AppView>("dashboard");
   const [schedules, setSchedules] = useState(initialStore.schedules);
   const [jobs, setJobs] = useState(initialStore.jobs);
   const [search, setSearch] = useState("");
@@ -53,7 +53,8 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
 
   const selectedSchedule = schedules.find((schedule) => schedule.id === selectedScheduleId);
   const selectedJob = jobs.find((job) => job.id === selectedJobId);
-  const exportHref = `/api/export?graduationYear=${selectedGraduationYear}&stage=${encodeURIComponent(stageFilter)}&search=${encodeURIComponent(search)}`;
+  const exportStage = view === "dashboard" ? "全部" : stageFilter;
+  const exportHref = `/api/export?graduationYear=${selectedGraduationYear}&stage=${encodeURIComponent(exportStage)}&search=${encodeURIComponent(search)}`;
   const cohortSchedules = useMemo(
     () => schedules.filter((schedule) => isDateInRange(schedule.date, dateRange)),
     [dateRange, schedules],
@@ -186,7 +187,18 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
         view={view}
       />
       <div className="flex min-h-0 min-w-0 flex-1">
-        {view === "timeline" ? (
+        {view === "dashboard" ? (
+          <DashboardPage
+            jobs={cohortJobs}
+            onSelectCompany={(company) => {
+              setSelectedCompany(company);
+              setSelectedJobId(null);
+            }}
+            schedules={cohortSchedules}
+            search={search}
+          />
+        ) : null}
+        {view === "list" ? (
           <TimelinePage
             jobs={jobs}
             onSelect={(schedule) => setSelectedScheduleId(schedule.id)}
@@ -196,8 +208,8 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
             stageFilter={stageFilter}
           />
         ) : null}
-        {view === "time-axis" ? (
-          <TimeAxisPage
+        {view === "calendar" ? (
+          <WeeklyCalendarPage
             onSelect={(schedule) => setSelectedScheduleId(schedule.id)}
             onStageFilterChange={setStageFilter}
             schedules={cohortSchedules}
@@ -205,21 +217,7 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
             stageFilter={stageFilter}
           />
         ) : null}
-        {view === "companies" ? (
-          <CompaniesPage
-            jobs={cohortJobs}
-            onSelectCompany={(company) => {
-              setSelectedCompany(company);
-              setSelectedJobId(null);
-            }}
-            onStageFilterChange={setStageFilter}
-            schedules={cohortSchedules}
-            search={search}
-            selectedCompany={selectedCompany}
-            stageFilter={stageFilter}
-          />
-        ) : null}
-        {(view === "timeline" || view === "time-axis") && selectedSchedule ? (
+        {(view === "list" || view === "calendar") && selectedSchedule ? (
           <ScheduleDetailDrawer
             job={matchedJob}
             onClose={() => setSelectedScheduleId(null)}
@@ -237,7 +235,7 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
             schedule={selectedSchedule}
           />
         ) : null}
-        {view === "companies" && selectedCompany ? (
+        {view === "dashboard" && selectedCompany ? (
           <CompanyDetailDrawer
             company={selectedCompany}
             job={selectedJob}

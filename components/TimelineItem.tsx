@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import { formatChineseDate } from "@/lib/date";
 import type { Schedule } from "@/lib/types";
 import { getScheduleStageLabel } from "@/lib/interviewRound";
 import { CompanyAvatar } from "./CompanyAvatar";
@@ -9,22 +10,29 @@ export function TimelineItem({
   schedule,
   batch,
   onClick,
+  grouped = false,
 }: {
   schedule: Schedule;
   batch?: string;
   onClick: () => void;
+  grouped?: boolean;
 }) {
+  const [dateLabel, weekday = ""] = formatChineseDate(schedule.date).split(/\s+/);
   return (
     <button
       aria-label={`查看 ${schedule.company} ${schedule.position} ${schedule.stage} 详情`}
-      className="timeline-event-row group w-full border-b border-[#f2f3f5] bg-white text-left transition-colors last:border-b-0 hover:bg-[#fafbfc] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3370ff]/25"
+      className={`timeline-event-row ${grouped ? "timeline-event-row-grouped" : ""} group w-full border-b border-[#f2f3f5] bg-white text-left transition-colors last:border-b-0 hover:bg-[#fafbfc] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3370ff]/25`}
       onClick={onClick}
       type="button"
     >
-      {/* 头像 + 公司名称作为一组在列内居中；组内头像固定 28px、间距固定 10px、名称左对齐，
-          所以每一行的头像起点与名称起始线都相同。 */}
+      {!grouped ? <span className="timeline-event-cell justify-center border-r border-[#f2f3f5] text-center">
+        <span>
+          <span className="block text-xs font-semibold tabular-nums text-[#3b3f45]">{dateLabel}</span>
+          <span className="mt-1 block text-[11px] text-[#9aa0a8]">{weekday}</span>
+        </span>
+      </span> : null}
       <span className="timeline-event-cell justify-center">
-        <span className="grid w-[176px] min-w-0 grid-cols-[28px_minmax(0,1fr)] items-center gap-2.5">
+        <span className="grid w-[140px] min-w-0 translate-x-5 grid-cols-[28px_minmax(0,1fr)] items-center gap-2.5">
           <CompanyAvatar company={schedule.company} size="sm" />
           <span className="min-w-0 truncate text-left text-sm font-semibold text-[#1f2329]">
             {schedule.company}
@@ -32,10 +40,10 @@ export function TimelineItem({
         </span>
       </span>
       <span
-        className="timeline-event-cell justify-center truncate text-center text-sm text-[#4e5969]"
+        className="timeline-event-cell justify-center text-center text-sm text-[#4e5969]"
         title={schedule.position}
       >
-        {schedule.position}
+        <span className="truncate">{schedule.position}</span>
       </span>
       <span className="timeline-event-cell justify-center">
         <RecruitmentBatchBadge batch={batch} />

@@ -36,7 +36,6 @@ export function RecruitmentBatchBadge({ batch }: { batch?: string }) {
         styles.badge,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", styles.dot)} />
       {normalizedBatch}
     </span>
   );

@@ -22,12 +22,12 @@ export function TimelineDayGroup({
 
   return (
     <section
-      aria-labelledby={`date-${date}`}
+      aria-label={fullDateLabel}
       className="timeline-date-group grid border-b border-[#e5e7eb]"
     >
       <div className="sticky left-0 z-20 min-h-[62px] border-r border-[#f0f1f2] bg-white">
         <div className="sticky top-11 flex h-[62px] items-center justify-center px-6 text-center">
-          <h2 className="leading-none" id={`date-${date}`}>
+          <h2 className="leading-none">
             <span className="block text-sm font-semibold tabular-nums text-[#3b3f45]">
               {dateLabel}
             </span>
@@ -40,6 +40,7 @@ export function TimelineDayGroup({
       <div className="min-w-0">
         {schedules.map((schedule) => (
           <TimelineItem
+            grouped
             batch={batchByJobKey.get(
               `${getCompanyMatchKey(schedule.company)}::${normalizedSearch(schedule.position)}`,
             )}

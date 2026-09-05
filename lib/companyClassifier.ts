@@ -1,4 +1,5 @@
 import type { CompanyCategory } from "./types";
+import { getCompanyDisplayName } from "./companyNames";
 
 export const FINANCIAL_KEYWORDS = [
   "基金",
@@ -20,6 +21,8 @@ export const FINANCIAL_KEYWORDS = [
   "创投",
   "VC",
   "PE",
+  "投行",
+  "券商",
 ] as const;
 
 export const INTERNET_COMPANIES = [
@@ -79,31 +82,90 @@ export const INTERNET_COMPANIES = [
   "Xiaomi",
   "Huawei",
   "Trip.com",
+  "Shopee",
+  "Sea",
+  "水滴公司",
+  "度小满",
+  "迅雷", "金山云", "哈啰", "转转",
+] as const;
+
+export const FINANCIAL_COMPANIES = [
+  "中金公司",
+  "中信证券",
+  "华泰证券",
+  "申万宏源",
+  "国泰海通",
+  "招商证券",
+  "广发证券",
+  "易方达基金",
+  "嘉实基金",
+  "嘉实资本",
+  "高盛",
+  "摩根士丹利",
+  "摩根大通",
+  "招商银行",
+  "平安银行",
+  "中国平安", "中证信用", "中信建投",
+] as const;
+
+export const STATE_OWNED_COMPANIES = [
+  "国家电网",
+  "中国移动",
+  "中国联通",
+  "中国电信",
+  "中国石油",
+  "中国石化",
+  "中国建筑",
+  "招商局集团",
+  "中信集团",
+  "中国船舶",
+  "中国中车",
+  "中国邮政",
+  "中国东方", "中国中铁", "中国铁建", "中国交建", "中国中化", "中国电建", "中国能建", "中粮集团", "华润集团", "国家能源", "国家电投", "中国华能", "中国大唐", "中国华电", "中国广核", "中国核工业", "中国航天", "中国航空工业", "中国电子科技", "中国旅游集团",
 ] as const;
 
 function normalized(value: string) {
-  return value.trim().toLocaleLowerCase();
+  return value.trim().toLocaleLowerCase().replace(/\s+/g, "");
+}
+
+/** 英文简称必须完整匹配，避免 Shoppe 命中 PE、research 命中 Sea。 */
+function matches(company: string, candidate: string) {
+  const name = normalized(candidate);
+  return /[\u3400-\u9fff]/.test(name) ? company.includes(name) : company === name || company === `${name}集团` || company === `${name}中国`;
 }
 
 export function classifyCompany(companyName: string): CompanyCategory {
-  const company = normalized(companyName);
+  const company = normalized(getCompanyDisplayName(companyName));
+
+  if (
+    STATE_OWNED_COMPANIES.some((candidate) => {
+      const name = normalized(candidate);
+      return matches(company, name);
+    })
+  ) {
+    return "央国企";
+  }
 
   if (
     INTERNET_COMPANIES.some((candidate) => {
       const name = normalized(candidate);
-      return company === name || company.includes(name);
+      return matches(company, name);
     })
   ) {
     return "互联网大厂";
   }
 
   if (
+    FINANCIAL_COMPANIES.some((candidate) => {
+      const name = normalized(candidate);
+      return matches(company, name);
+    }) ||
     FINANCIAL_KEYWORDS.some((keyword) =>
-      company.includes(normalized(keyword)),
+      matches(company, keyword),
     )
   ) {
     return "金融公司";
   }
 
-  return "实业公司";
+  return "实体企业";
 }

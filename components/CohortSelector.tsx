@@ -1,5 +1,4 @@
 import { ChevronDown } from "lucide-react";
-import { formatCohortLabel } from "@/lib/cohort";
 import { useRecruitmentCohort } from "./RecruitmentCohortContext";
 
 export function CohortSelector() {
@@ -11,13 +10,13 @@ export function CohortSelector() {
       <span className="sr-only">选择秋招届别</span>
       <select
         aria-label="选择秋招届别"
-        className="h-9 appearance-none rounded-lg border border-[#dee0e3] bg-white pl-3 pr-8 text-sm font-medium text-[#4e5969] outline-none transition hover:border-[#c9cdd4] hover:bg-[#f7f8fa] focus:border-[#85a8ff] focus:ring-2 focus:ring-[#3370ff]/10"
+        className="h-9 appearance-none rounded-[10px] border border-white/80 bg-white/70 pl-3 pr-8 text-sm font-medium text-[#4e5969] shadow-[0_1px_4px_rgba(31,35,41,0.06)] backdrop-blur-xl outline-none transition hover:border-[#d7dae0] hover:bg-white focus:border-[#85a8ff] focus:ring-2 focus:ring-[#3370ff]/10"
         onChange={(event) => setSelectedGraduationYear(Number(event.target.value))}
         value={selectedGraduationYear}
       >
         {cohortOptions.map((year) => (
           <option key={year} value={year}>
-            {formatCohortLabel(year)}
+            {year}届
           </option>
         ))}
       </select>

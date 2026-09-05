@@ -290,6 +290,23 @@ function migrateLegacySchedule(raw: unknown) {
 }
 
 /**
+ * 公司分类是可演进的展示字段，每次读取时根据最新规则重算。
+ * 这也负责把历史的「实业公司」平滑迁移为「实体企业」。
+ */
+function migrateJobCategory(raw: unknown) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { value: raw, migrated: false };
+  }
+  const record = raw as Record<string, unknown>;
+  if (typeof record.company !== "string") return { value: raw, migrated: false };
+  const category = classifyCompany(record.company);
+  return {
+    value: { ...record, category },
+    migrated: record.category !== category,
+  };
+}
+
+/**
  * 逐条校验记录：合法的留下，非法的挑出来隔离。
  * 这样「一条脏记录」不会连坐整个文件，也不会被静默丢弃。
  */
@@ -311,7 +328,9 @@ function parseStoreValue(value: unknown): ParseOutcome | null {
 
   const jobs: Job[] = [];
   for (const raw of envelope.data.jobs) {
-    const parsed = jobRecordSchema.safeParse(raw);
+    const legacy = migrateJobCategory(raw);
+    migrated ||= legacy.migrated;
+    const parsed = jobRecordSchema.safeParse(legacy.value);
     if (parsed.success) jobs.push(parsed.data);
     else rejected.push(raw);
   }

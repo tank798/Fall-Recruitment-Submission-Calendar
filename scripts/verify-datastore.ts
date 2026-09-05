@@ -269,6 +269,14 @@ async function main() {
     migratedAssessment?.stage === "笔试" && migratedAssessment.writtenRound === "测评",
   );
 
+  const categoryFixture = JSON.parse(await readFile(DATA_FILE, "utf8"));
+  const jobCountBeforeMigration = categoryFixture.jobs.length;
+  categoryFixture.jobs[0].category = "实业公司";
+  categoryFixture.jobs[0].jd = "旧分类 JD 必须保留";
+  await writeFile(DATA_FILE, JSON.stringify(categoryFixture));
+  const categoryMigrated = await dataStore.getDataStore();
+  check("旧分类迁移不丢岗位和 JD", categoryMigrated.jobs.length === jobCountBeforeMigration && categoryMigrated.jobs[0].jd === "旧分类 JD 必须保留" && categoryMigrated.jobs[0].category === "实体企业");
+
   /* --- 场景 7：无数据源空启动（独立进程）------------------------- */
   try {
     const { stdout } = await execFileAsync(

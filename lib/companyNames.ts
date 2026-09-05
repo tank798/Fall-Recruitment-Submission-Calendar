@@ -6,6 +6,9 @@ const COMPANY_ALIASES: Record<string, string> = {
   阿里巴巴: "阿里巴巴",
   alibaba: "阿里巴巴",
   alibabagroup: "阿里巴巴",
+  shoppe: "Shopee",
+  shopee: "Shopee",
+  虾皮: "Shopee",
 };
 
 /** 将常见简称归并为统一展示名；只影响视图，不改写底层原始记录。 */
