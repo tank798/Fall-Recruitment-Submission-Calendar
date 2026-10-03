@@ -29,6 +29,7 @@ const CANONICAL_ALIASES = {
   writtenRound: ["笔试轮次", "笔试阶段"],
   offerType: ["Offer类型", "Offer阶段", "录用类型"],
   failNote: ["未通过说明", "未通过备注", "拒绝原因", "挂因"],
+  notes: ["备注"],
   detail: ["具体事项", "事项", "详情"],
   sourceLink: ["来源链接", "链接", "申请链接", "投递链接"],
   source: ["记录来源", "来源"],
@@ -320,6 +321,7 @@ function parseCanonicalSchedules(
           ? normalizeOfferType(clean(row[columns.offerType])) || inferOfferType(detail)
           : "",
       failNote: stage === "未通过" ? normalizeFailNote(clean(row[columns.failNote])) : "",
+      notes: clean(row[columns.notes]) || undefined,
       sourceLink: clean(row[columns.sourceLink]) || undefined,
       source,
       createdAt: clean(row[columns.createdAt]) || importedAt,
@@ -353,6 +355,7 @@ export function parseSourceWorkbook(sourceFile: string): RecruitmentStore {
     writtenRound: findColumn(overviewHeaders, CANONICAL_ALIASES.writtenRound),
     offerType: findColumn(overviewHeaders, CANONICAL_ALIASES.offerType),
     failNote: findColumn(overviewHeaders, CANONICAL_ALIASES.failNote),
+    notes: findColumn(overviewHeaders, CANONICAL_ALIASES.notes),
     detail: findColumn(overviewHeaders, CANONICAL_ALIASES.detail),
     sourceLink: findColumn(overviewHeaders, CANONICAL_ALIASES.sourceLink),
     source: findColumn(overviewHeaders, CANONICAL_ALIASES.source),

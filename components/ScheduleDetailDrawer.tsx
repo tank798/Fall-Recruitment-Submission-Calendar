@@ -132,6 +132,12 @@ export function ScheduleDetailDrawer({
           <div className="mt-6">
             <JDPanel job={job} />
           </div>
+          {schedule.notes?.trim() ? (
+            <section className="mt-6 border-t border-slate-100 pt-5">
+              <h3 className="text-xs font-medium text-slate-400">备注</h3>
+              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-600">{schedule.notes}</p>
+            </section>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5">

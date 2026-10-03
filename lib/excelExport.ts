@@ -19,6 +19,7 @@ export function exportStoreToExcel(store: RecruitmentStore) {
       笔试轮次: schedule.writtenRound || "",
       Offer类型: schedule.offerType || "",
       未通过说明: schedule.failNote || "",
+      备注: schedule.notes || "",
       来源链接: schedule.sourceLink || "",
       记录来源: schedule.source,
       记录ID: schedule.id,
@@ -35,6 +36,7 @@ export function exportStoreToExcel(store: RecruitmentStore) {
       "笔试轮次",
       "Offer类型",
       "未通过说明",
+      "备注",
       "来源链接",
       "记录来源",
       "记录ID",
@@ -42,8 +44,8 @@ export function exportStoreToExcel(store: RecruitmentStore) {
       "更新时间",
     ],
   });
-  setWidths(scheduleSheet, [18, 28, 13, 10, 12, 12, 16, 14, 45, 12, 24, 24, 24]);
-  scheduleSheet["!autofilter"] = { ref: scheduleSheet["!ref"] || "A1:M1" };
+  setWidths(scheduleSheet, [18, 28, 13, 10, 12, 12, 16, 14, 50, 45, 12, 24, 24, 24]);
+  scheduleSheet["!autofilter"] = { ref: scheduleSheet["!ref"] || "A1:N1" };
   // 导出的第一张表使用与解析器一致的规范列名，能够无损回导。
   XLSX.utils.book_append_sheet(workbook, scheduleSheet, "总览");
 

@@ -21,10 +21,6 @@ if /usr/bin/curl -fsS "http://127.0.0.1:3000" >/dev/null 2>&1; then
   exit 0
 fi
 
-if [ ! -f "./.next/BUILD_ID" ]; then
-  echo "正在准备秋招时间表，首次启动可能需要一两分钟…"
-  ./node_modules/.bin/next build
-fi
-
 (sleep 2; open "http://127.0.0.1:3000") &
-exec ./node_modules/.bin/next start --hostname 127.0.0.1 --port 3000
+echo "正在启动秋招时间表（自动加载最新代码）…"
+exec ./node_modules/.bin/next dev --hostname 127.0.0.1 --port 3000

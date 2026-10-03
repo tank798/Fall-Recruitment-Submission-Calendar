@@ -68,13 +68,14 @@ export function DailyFlowChart({ schedules }: { schedules: Schedule[] }) {
           className="w-[150px]"
           compact
           getLabel={(value) => (value === "heatmap" ? "热力图" : "柱状图")}
-          onChange={setMode}
+          onChange={(value) => { setHover(null); setMode(value); }}
           options={["heatmap", "bars"] as const}
           value={mode}
         />
       </div>
 
       <div className="mt-5 min-h-[230px]" ref={container}
+        onScrollCapture={() => setHover(null)}
         onMouseLeave={() => setHover(null)}
         onMouseMove={(event) => {
           const cell = (event.target as HTMLElement).closest<HTMLElement>("[data-flow-date]");
@@ -170,8 +171,8 @@ function Heatmap({
                 const value = day[stage];
                 const alpha = value ? 0.2 + (value / maxima[stage]) * 0.72 : 0.055;
                 return (
-                  <div data-flow-date={date} aria-label={`${date} ${stage} ${value}条`} className="flex h-6 w-[26px] items-center justify-center border-r border-white" key={date}>
-                    <span className="h-[18px] w-[18px] rounded-[4px]" style={{ backgroundColor: value ? `${STAGE_HEX[stage]}${Math.round(alpha * 255).toString(16).padStart(2, "0")}` : "#f1f3f5" }} />
+                  <div aria-label={`${date} ${stage} ${value}条`} className="flex h-6 w-[26px] items-center justify-center border-r border-white" key={date}>
+                    <span data-flow-date={date} className="h-[18px] w-[18px] rounded-[4px]" style={{ backgroundColor: value ? `${STAGE_HEX[stage]}${Math.round(alpha * 255).toString(16).padStart(2, "0")}` : "#f1f3f5" }} />
                   </div>
                 );
               })}
@@ -213,8 +214,8 @@ function StackedBars({
         {dates.map((date, index) => {
           const day = counts.get(date)!;
           return (
-            <div data-flow-date={date} className="group relative flex h-full w-[26px] shrink-0 flex-col justify-end border-r border-white" key={date}>
-              <div className="mx-auto flex w-[18px] flex-col justify-end overflow-hidden rounded-t-[4px]" style={{ height: `${(totals[index] / maxTotal) * 154}px` }}>
+            <div className="group relative flex h-full w-[26px] shrink-0 flex-col justify-end border-r border-white" key={date}>
+              <div data-flow-date={date} className="mx-auto flex w-[18px] flex-col justify-end overflow-hidden rounded-t-[4px]" style={{ height: `${(totals[index] / maxTotal) * 154}px` }}>
                 {[...STAGES].reverse().map((stage) => day[stage] ? (
                   <span key={stage} style={{ backgroundColor: STAGE_HEX[stage], height: `${(day[stage] / Math.max(1, totals[index])) * 100}%` }} />
                 ) : null)}

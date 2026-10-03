@@ -24,6 +24,7 @@ export const scheduleRecordSchema = z.object({
   writtenRound: text.optional(),
   offerType: text.optional(),
   failNote: text.optional(),
+  notes: text.optional(),
   sourceLink: z.string().optional(),
   source: z.enum(["excel", "web"]).default("web"),
   createdAt: text,

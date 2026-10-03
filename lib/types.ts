@@ -25,6 +25,7 @@ export interface Schedule {
   writtenRound?: string;
   offerType?: string;
   failNote?: string;
+  notes?: string;
   sourceLink?: string;
   source: "excel" | "web";
   createdAt: string;
@@ -53,7 +54,7 @@ export interface RecruitmentStore {
 
 type ScheduleFields = Pick<
   Schedule,
-  "company" | "position" | "date" | "stage" | "sourceLink"
+  "company" | "position" | "date" | "stage" | "sourceLink" | "notes"
 >;
 
 export type ScheduleInput = ScheduleFields & {

@@ -3,6 +3,7 @@ import { formatChineseDate } from "@/lib/date";
 import type { Schedule } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
 import { TimelineItem } from "./TimelineItem";
+import { getScheduleStageLabel } from "@/lib/interviewRound";
 
 /** 用左侧跨行日期单元格包住同一天的全部单行事件。 */
 export function TimelineDayGroup({
@@ -10,11 +11,13 @@ export function TimelineDayGroup({
   schedules,
   batchByJobKey,
   onSelect,
+  history,
 }: {
   date: string;
   schedules: Schedule[];
   batchByJobKey: Map<string, string | undefined>;
   onSelect: (schedule: Schedule) => void;
+  history?: Map<string, Schedule[]>;
 }) {
   const fullDateLabel = formatChineseDate(date);
   const [dateLabel, ...weekdayParts] = fullDateLabel.split(/\s+/);
@@ -39,6 +42,7 @@ export function TimelineDayGroup({
       </div>
       <div className="min-w-0">
         {schedules.map((schedule) => (
+          <div key={schedule.id} className="border-b border-[#f2f3f5] last:border-b-0">
           <TimelineItem
             grouped
             batch={batchByJobKey.get(
@@ -48,6 +52,19 @@ export function TimelineDayGroup({
             onClick={() => onSelect(schedule)}
             schedule={schedule}
           />
+          {history?.get(schedule.id)?.length ? (
+            <details className="px-6 pb-2 text-[11px] text-slate-400">
+              <summary className="w-fit cursor-pointer hover:text-slate-600">此前 {history.get(schedule.id)!.length} 条进展</summary>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {history.get(schedule.id)!.map((previous) => (
+                  <button key={previous.id} type="button" onClick={() => onSelect(previous)} className="rounded-md border border-slate-100 px-2 py-1 text-slate-500 hover:bg-slate-50">
+                    {previous.date.slice(5)} · {getScheduleStageLabel(previous)}
+                  </button>
+                ))}
+              </div>
+            </details>
+          ) : null}
+          </div>
         ))}
       </div>
     </section>

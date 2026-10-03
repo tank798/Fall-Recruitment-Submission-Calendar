@@ -16,6 +16,7 @@ export const scheduleInputSchema = z
     failNote: z.string().trim().max(12, "未通过说明不能超过 12 个字符").default(""),
     batch: z.enum(RECRUITMENT_BATCHES).default("秋招"),
     jd: z.string().trim().max(30_000, "JD 详情不能超过 30000 个字符").default(""),
+    notes: z.string().trim().max(30_000, "备注不能超过 30000 个字符").optional(),
     sourceLink: z
       .string()
       .trim()

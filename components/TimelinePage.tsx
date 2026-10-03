@@ -4,6 +4,7 @@ import { getCompanyMatchKey } from "@/lib/companyNames";
 import { getScheduleStageLabel } from "@/lib/interviewRound";
 import type { Job, Schedule, StageFilterValue } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
+import { getProgressView } from "@/lib/progressView";
 import { StageFilterPills } from "./StageFilterPills";
 import { TimelineDayGroup } from "./TimelineDayGroup";
 
@@ -33,6 +34,9 @@ export function TimelinePage({
   onStageFilterChange: (value: StageFilterValue) => void;
   onSelect: (schedule: Schedule) => void;
 }) {
+  const [latestOnly, setLatestOnly] = useState(false);
+  const [hideRejected, setHideRejected] = useState(false);
+  const progress = useMemo(() => getProgressView(schedules, latestOnly, hideRejected), [schedules, latestOnly, hideRejected]);
   const [sortRules, setSortRules] = useState<Array<{ key: SortKey; direction: SortDirection }>>([
     { key: "date", direction: "desc" },
   ]);
@@ -51,7 +55,7 @@ export function TimelinePage({
     const query = normalizedSearch(search);
     const getBatch = (schedule: Schedule) =>
       batchByJobKey.get(`${getCompanyMatchKey(schedule.company)}::${normalizedSearch(schedule.position)}`) || "";
-    const filtered = schedules.filter((schedule) => {
+    const filtered = progress.visible.filter((schedule) => {
       if (stageFilter !== "全部" && schedule.stage !== stageFilter) return false;
       if (!query) return true;
       return normalizedSearch(
@@ -69,7 +73,7 @@ export function TimelinePage({
       }
       return right.date.localeCompare(left.date) || left.company.localeCompare(right.company, "zh-CN");
     });
-  }, [batchByJobKey, schedules, search, sortRules, stageFilter]);
+  }, [batchByJobKey, progress, search, sortRules, stageFilter]);
 
   const changeSort = (nextKey: SortKey) => {
     setSortRules((current) => {
@@ -89,8 +93,13 @@ export function TimelinePage({
 
   return (
     <main aria-labelledby="list-tab" className="flex min-w-0 flex-1 flex-col bg-white" id="list-panel" role="tabpanel">
-      <section className="flex min-h-[56px] shrink-0 items-center justify-center border-b border-[#e5e6e8] bg-white px-6 lg:px-8">
+      <section className="grid min-h-[56px] shrink-0 grid-cols-[minmax(250px,1fr)_auto_minmax(250px,1fr)] items-center gap-4 overflow-x-auto border-b border-[#e5e6e8] bg-white px-6 lg:px-8">
+        <span aria-hidden="true" />
         <StageFilterPills onChange={onStageFilterChange} value={stageFilter} />
+      <div className="flex items-center justify-self-end gap-4 whitespace-nowrap text-xs text-slate-400">
+        <label className="flex cursor-pointer items-center gap-2"><input className="accent-[#3370ff]" type="checkbox" checked={latestOnly} onChange={(event) => setLatestOnly(event.target.checked)} />只展示最新进展</label>
+        <label className="flex cursor-pointer items-center gap-2"><input className="accent-[#3370ff]" type="checkbox" checked={hideRejected} onChange={(event) => setHideRejected(event.target.checked)} />隐藏已拒绝</label>
+      </div>
       </section>
       <div className="timeline-table-scroll min-h-0 flex-1 overflow-auto bg-white">
         <div className="timeline-table">
@@ -122,7 +131,7 @@ export function TimelinePage({
             <span aria-hidden="true" />
           </div>
           {visibleSchedules.length ? dateGroups.map((group, index) => (
-            <TimelineDayGroup date={group.date} schedules={group.schedules} batchByJobKey={batchByJobKey} key={`${group.date}-${index}`} onSelect={onSelect} />
+            <TimelineDayGroup date={group.date} schedules={group.schedules} history={progress.history} batchByJobKey={batchByJobKey} key={`${group.date}-${index}`} onSelect={onSelect} />
           )) : (
             <div className="grid min-h-[360px] place-items-center text-sm text-[#8f959e]">暂无数据</div>
           )}

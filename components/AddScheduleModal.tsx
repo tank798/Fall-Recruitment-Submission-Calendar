@@ -28,6 +28,7 @@ const EMPTY_FORM: ScheduleInput = {
   sourceLink: "",
   batch: DEFAULT_RECRUITMENT_BATCH,
   jd: "",
+  notes: "",
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -83,6 +84,7 @@ export function AddScheduleModal({
             sourceLink: schedule.sourceLink || matchingJob?.sourceLink || "",
             batch: normalizeRecruitmentBatch(matchingJob?.batch),
             jd: matchingJob?.jd || "",
+            notes: schedule.notes || "",
           }
         : { ...EMPTY_FORM, date: clampDateToRange(getTodayInChina(), dateRange) },
     );
@@ -358,6 +360,17 @@ export function AddScheduleModal({
               onChange={(event) => update("jd", event.target.value)}
               placeholder="填写岗位职责、任职要求等 JD 信息"
               value={form.jd || ""}
+            />
+          </label>
+
+          <label className="sm:col-span-2">
+            <FieldLabel>备注</FieldLabel>
+            <textarea
+              className={cn(inputClass, "min-h-32 resize-y py-2.5 leading-6")}
+              maxLength={30000}
+              onChange={(event) => update("notes", event.target.value)}
+              placeholder="记录面试反馈、准备事项或其他想法"
+              value={form.notes || ""}
             />
           </label>
 

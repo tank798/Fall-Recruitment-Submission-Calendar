@@ -1,4 +1,6 @@
-import { Download, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import type { Schedule } from "@/lib/types";
+import { ExportMenu } from "./ExportMenu";
 import { useEffect, useRef, useState } from "react";
 import { CohortSelector } from "./CohortSelector";
 import { SearchBar } from "./SearchBar";
@@ -17,6 +19,7 @@ export function TopNavigation({
   view,
   search,
   exportHref,
+  schedules,
   onChange,
   onSearchChange,
   onAdd,
@@ -24,6 +27,7 @@ export function TopNavigation({
   view: AppView;
   search: string;
   exportHref: string;
+  schedules: Schedule[];
   onChange: (view: AppView) => void;
   onSearchChange: (value: string) => void;
   onAdd: () => void;
@@ -108,13 +112,7 @@ export function TopNavigation({
             ) : null}
           </div>
           <CohortSelector />
-          <a
-            className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-white/80 bg-white/70 px-3.5 text-sm font-medium text-[#4e5969] shadow-[0_1px_4px_rgba(31,35,41,0.06)] backdrop-blur-xl transition hover:border-[#d7dae0] hover:bg-white hover:text-[#1f2329] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/20"
-            href={exportHref}
-          >
-            <Download className="h-4 w-4" />
-            导出 Excel
-          </a>
+          <ExportMenu excelHref={exportHref} schedules={schedules} />
           <button
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-[#3370ff] px-3.5 text-sm font-medium text-white shadow-[0_4px_12px_rgba(51,112,255,0.22)] transition hover:bg-[#2865e8] hover:shadow-[0_6px_16px_rgba(51,112,255,0.26)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3370ff]/30 focus-visible:ring-offset-2"
             onClick={onAdd}

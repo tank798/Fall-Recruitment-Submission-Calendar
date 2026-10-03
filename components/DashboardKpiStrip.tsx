@@ -21,19 +21,21 @@ const SURFACES: Record<Stage, string> = {
 
 export function DashboardKpiStrip({ schedules }: { schedules: Schedule[] }) {
   const [flippedStages, setFlippedStages] = useState<Stage[]>([]);
-  const { counts, totalJobs } = useMemo(() => getRecruitmentStats(schedules), [schedules]);
+  const { counts, totalCompanies, totalJobs } = useMemo(() => getRecruitmentStats(schedules), [schedules]);
   const interviewCount = counts["面试"];
 
   return (
     <section aria-label="核心进展">
       <div className="grid grid-cols-5 gap-3.5">
         {KPI_STAGES.map((stage) => {
+          const value = counts[stage];
+          const numerator = stage === "投递" ? totalCompanies : value;
           const denominator = stage === "Offer" ? interviewCount : totalJobs;
-          const rate = stage === "投递" ? (totalJobs ? "100.0%" : "0.0%") : formatPercent(counts[stage], denominator);
+          const rate = formatPercent(numerator, denominator);
           const colors = KPI_COLORS[stage];
           const flipped = flippedStages.includes(stage);
-          const fraction = `${counts[stage]}/${denominator}`;
-          const formula = `${counts[stage]} ÷ ${denominator} × 100%`;
+          const fraction = `${numerator}/${denominator}`;
+          const formula = `${numerator} ÷ ${denominator} × 100%`;
           return (
             <div
               className={`relative min-h-[104px] min-w-0 cursor-default rounded-[18px] border px-4 py-3.5 shadow-[0_2px_5px_rgba(31,35,41,0.025)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(31,35,41,0.065)] ${SURFACES[stage]}`}
@@ -42,7 +44,7 @@ export function DashboardKpiStrip({ schedules }: { schedules: Schedule[] }) {
               <p className={`text-xs font-semibold ${colors.text}`}>{stage}</p>
               <div className="mt-3 flex items-end justify-between gap-3">
                 <strong className="text-[26px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-[#1f2329]">
-                  {counts[stage]}
+                  {value}
                 </strong>
                 <button
                   type="button"

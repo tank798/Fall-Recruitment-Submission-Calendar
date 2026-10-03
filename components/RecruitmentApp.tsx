@@ -179,6 +179,7 @@ function RecruitmentAppContent({ initialStore }: { initialStore: RecruitmentStor
   return (
     <div className="flex h-dvh min-h-[620px] flex-col overflow-hidden bg-[#f7f8fa] text-[#1f2329]">
       <TopNavigation
+        schedules={schedules}
         exportHref={exportHref}
         onAdd={openAddModal}
         onChange={changeView}

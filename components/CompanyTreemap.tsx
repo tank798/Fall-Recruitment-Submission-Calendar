@@ -53,7 +53,7 @@ export function CompanyTreemap({ jobs, schedules, search, onSelectCompany }: {
       {tiles.length ? tiles.map(({group, x, y, w, h}) => <div className="absolute p-1" key={group.name} style={{left:`${x}%`, top:`${y}%`, width:`${w}%`, height:`${h}%`}}>
         <button onClick={event => { origin.current = event.currentTarget; setSelected(group); }} className={`flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-[16px] border px-4 ${h < 20 ? "justify-center py-1" : "py-4"} text-left transition hover:brightness-[0.98] hover:shadow-sm ${group.color}`} aria-label={`浏览${group.name}公司`}>
           <span className="flex w-full shrink-0 items-center justify-between gap-2"><strong className="truncate text-sm font-semibold">{group.name}</strong><span className="text-xs text-slate-500">{group.jobs.length}</span></span>
-          <span className={`${h < 20 ? "hidden" : "mt-3 flex"} min-h-0 flex-wrap content-start gap-1.5 overflow-hidden`}>
+          <span className={`${h < 20 ? "hidden" : "mt-3 flex flex-1"} min-h-0 flex-wrap content-start gap-1.5 overflow-x-hidden overflow-y-auto overscroll-contain`}>
             {[...new Set(group.jobs.map(j => getCompanyDisplayName(j.company)))].sort((a,b) => a.localeCompare(b,"zh-CN")).map(company => <span key={company} className="max-w-full truncate rounded-md border border-white/80 bg-white/75 px-2 py-1 text-[11px] text-[#4e5969]">{company}</span>)}
           </span>
         </button>

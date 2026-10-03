@@ -92,15 +92,10 @@ a {
   font-variant-numeric: tabular-nums;
   color: #8f959e;
 }
-.kpi-percentage:hover .kpi-percentage-front { color: #4e5969; }
+.kpi-percentage:hover .kpi-percentage-front,
+.kpi-percentage:hover .kpi-percentage-back { color: #4e5969; }
 .kpi-percentage-back {
   transform: rotateX(180deg);
-  color: #646a73;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
 }
 
 .segmented-slider-indicator {

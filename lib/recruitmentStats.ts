@@ -9,7 +9,9 @@ export function getJobKey(company: string, position: string) {
 /** 同一公司同一岗位在同一环节只计一次。 */
 export function getRecruitmentStats(schedules: Schedule[]) {
   const stagesByJob = new Map<string, Set<Stage>>();
+  const companies = new Set<string>();
   for (const schedule of schedules) {
+    companies.add(getCompanyMatchKey(schedule.company));
     const key = getJobKey(schedule.company, schedule.position);
     const stages = stagesByJob.get(key) || new Set<Stage>();
     stages.add(schedule.stage);
@@ -23,6 +25,7 @@ export function getRecruitmentStats(schedules: Schedule[]) {
   };
 
   return {
+    totalCompanies: companies.size,
     totalJobs: stagesByJob.size,
     counts: {
       投递: stagesByJob.size,
