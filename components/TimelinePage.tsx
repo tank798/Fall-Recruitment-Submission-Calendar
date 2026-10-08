@@ -5,6 +5,7 @@ import { getScheduleStageLabel } from "@/lib/interviewRound";
 import type { Job, Schedule, StageFilterValue } from "@/lib/types";
 import { normalizedSearch } from "@/lib/utils";
 import { getProgressView } from "@/lib/progressView";
+import { compareCreationOrder } from "@/lib/creationOrder";
 import { StageFilterPills } from "./StageFilterPills";
 import { TimelineDayGroup } from "./TimelineDayGroup";
 
@@ -71,7 +72,7 @@ export function TimelinePage({
         const comparison = leftValue.localeCompare(rightValue, "zh-CN", { numeric: true });
         if (comparison !== 0) return direction === "asc" ? comparison : -comparison;
       }
-      return right.date.localeCompare(left.date) || left.company.localeCompare(right.company, "zh-CN");
+      return right.date.localeCompare(left.date) || compareCreationOrder(left, right);
     });
   }, [batchByJobKey, progress, search, sortRules, stageFilter]);
 

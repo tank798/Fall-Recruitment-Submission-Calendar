@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx scripts/verify-excel-parser.ts && tsx scripts/verify-datastore.ts",
+    "test": "tsx scripts/verify-excel-parser.ts && tsx scripts/verify-datastore.ts && tsx scripts/verify-creation-order.ts",
     "typecheck": "tsc --noEmit",
     "import:excel": "tsx scripts/import-excel.ts",
     "verify:datastore": "tsx scripts/verify-datastore.ts",
